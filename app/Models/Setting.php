@@ -13,6 +13,7 @@ class Setting extends Model
         'posts_per_page', 'default_meta_title', 'default_meta_description',
         'google_analytics', 'google_tag_manager',
         'site_niche', 'site_accent_color', 'site_font', 'site_layout', 'default_og_image',
+        'global_cta_title', 'global_cta_description', 'global_cta_button_text', 'global_cta_button_link', 'global_cta_bg_image',
     ];
 
     /**

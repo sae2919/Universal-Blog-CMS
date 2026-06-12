@@ -71,7 +71,7 @@
     </main>
 
     {{-- Call To Action & Directory Links --}}
-    @include('frontend.partials.cta_directory')
+    @include('frontend.partials.global_cta')
 
     {{-- Footer --}}
     @include('frontend.partials.footer')

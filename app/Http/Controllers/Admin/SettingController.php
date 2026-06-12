@@ -37,6 +37,11 @@ class SettingController extends Controller
             'site_logo'               => 'nullable|image|max:2048',
             'site_favicon'            => 'nullable|image|max:512',
             'default_og_image'        => 'nullable|image|max:2048',
+            'global_cta_title'        => 'nullable|string|max:255',
+            'global_cta_description'  => 'nullable|string|max:1000',
+            'global_cta_button_text'  => 'nullable|string|max:255',
+            'global_cta_button_link'  => 'nullable|string|max:255',
+            'global_cta_bg_image'     => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('site_logo')) {
@@ -47,6 +52,9 @@ class SettingController extends Controller
         }
         if ($request->hasFile('default_og_image')) {
             $validated['default_og_image'] = $request->file('default_og_image')->store('settings', 'public');
+        }
+        if ($request->hasFile('global_cta_bg_image')) {
+            $validated['global_cta_bg_image'] = $request->file('global_cta_bg_image')->store('settings', 'public');
         }
 
         Setting::updateOrCreate(['id' => 1], $validated);

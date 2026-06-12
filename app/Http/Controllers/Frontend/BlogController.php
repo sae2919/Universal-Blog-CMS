@@ -53,6 +53,9 @@ class BlogController extends Controller
         });
 
         if ($post) {
+            // Fetch live views directly from database to bypass cache
+            $post->views = \DB::table('posts')->where('id', $post->id)->value('views');
+
             // Calculate read time dynamically
             $post->read_time = $this->postService->calculateReadTime($post);
 

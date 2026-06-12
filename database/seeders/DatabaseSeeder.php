@@ -91,7 +91,7 @@ class DatabaseSeeder extends Seeder
                 'featured_image' => null, // Will use default or Unsplash link if needed
                 'status' => 'published',
                 'published_at' => now(),
-                'views' => 2450,
+                'views' => 0,
                 'is_featured' => true,
                 'is_trending' => true,
                 'allow_comments' => true,

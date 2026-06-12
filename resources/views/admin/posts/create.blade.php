@@ -89,8 +89,11 @@
                 </div>
             </div>
 
+            @php
+                $hasCtaPlaceholder = strpos(old('content', ''), 'post-cta') !== false;
+            @endphp
             {{-- Custom CTA Section --}}
-            <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
+            <div id="custom-cta-section" class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6 {{ $hasCtaPlaceholder ? '' : 'hidden' }}">
                 <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Custom Call-to-Action (CTA)</h3>
                 
                 <p class="text-xs text-gray-400">If you leave these fields blank, no CTA will be displayed for this post.</p>
@@ -329,7 +332,7 @@
         // Base config for all TinyMCE editors
         const baseConfig = {
             plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
-            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image insertslider insertimageleft insertimageright | removeformat code',
+            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image insertslider insertimageleft insertimageright insertcta | removeformat code',
             branding: false,
             promotion: false,
             link_target_list: [
@@ -389,6 +392,36 @@
                             '</div><p>&nbsp;</p>'
                         );
                     }
+                });
+
+                editor.ui.registry.addButton('insertcta', {
+                    text: 'Insert CTA',
+                    icon: 'non-breaking',
+                    tooltip: 'Insert Post-Specific CTA Block',
+                    onAction: function () {
+                        editor.insertContent(
+                            '<div class="post-cta bg-indigo-50/50 dark:bg-slate-900/30 p-6 rounded-2xl border border-indigo-200 dark:border-slate-800 text-center my-8">' +
+                            '  <p class="text-sm font-semibold text-indigo-650 dark:text-indigo-400">Post-Specific CTA Placeholder</p>' +
+                            '  <p class="text-xs text-gray-500">Your dynamic Call-To-Action and links directory will render here on the frontend.</p>' +
+                            '</div><p>&nbsp;</p>'
+                        );
+                    }
+                });
+
+                // Toggle visibility of Custom CTA section form fields dynamically
+                function checkCtaPlaceholder() {
+                    const content = editor.getContent();
+                    const section = document.getElementById('custom-cta-section');
+                    if (section) {
+                        if (content.indexOf('post-cta') !== -1) {
+                            section.classList.remove('hidden');
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    }
+                }
+                editor.on('NodeChange KeyUp Change Undo Redo ExecCommand init', function() {
+                    checkCtaPlaceholder();
                 });
             }
         };

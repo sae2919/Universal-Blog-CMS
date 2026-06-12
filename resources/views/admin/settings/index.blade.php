@@ -209,6 +209,54 @@
             </div>
         </div>
 
+        {{-- Section 6: Global Call-to-Action (CTA) --}}
+        <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
+            <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                📢 Global Call-to-Action (CTA)
+            </h3>
+            <p class="text-xs text-gray-400">This CTA will be displayed at the bottom of all pages across your website (e.g. homepage, category index, tag index, pages). Leave these fields blank to disable it.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="global_cta_title" class="block text-sm font-semibold text-gray-700">CTA Title</label>
+                    <input type="text" name="global_cta_title" id="global_cta_title" value="{{ old('global_cta_title', $settings->global_cta_title) }}" placeholder="e.g. Find Expert Mentors & Tutors on FindMyGuru"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label for="global_cta_bg_image" class="block text-sm font-semibold text-gray-700">CTA Background Image</label>
+                    @if($settings->global_cta_bg_image)
+                        <div class="mt-2 mb-2">
+                            <img src="{{ asset('storage/' . $settings->global_cta_bg_image) }}" class="h-14 object-cover rounded border border-gray-200 p-1 bg-gray-50" alt="">
+                        </div>
+                    @endif
+                    <input type="file" name="global_cta_bg_image" id="global_cta_bg_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <label for="global_cta_description" class="block text-sm font-semibold text-gray-700">CTA Description</label>
+                    <textarea name="global_cta_description" id="global_cta_description" rows="3" placeholder="Brief description of the call-to-action..."
+                              class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('global_cta_description', $settings->global_cta_description) }}</textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="global_cta_button_text" class="block text-sm font-semibold text-gray-700">CTA Button Text</label>
+                    <input type="text" name="global_cta_button_text" id="global_cta_button_text" value="{{ old('global_cta_button_text', $settings->global_cta_button_text) }}" placeholder="e.g. Find Tutors Near Me"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label for="global_cta_button_link" class="block text-sm font-semibold text-gray-700">CTA Button Link</label>
+                    <input type="text" name="global_cta_button_link" id="global_cta_button_link" value="{{ old('global_cta_button_link', $settings->global_cta_button_link) }}" placeholder="e.g. /search"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end gap-3 pt-6 border-t border-gray-250">
             <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all">
                 Save All Settings
