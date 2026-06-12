@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    /* Main Background & Text */
+    .dark body {
+        @apply bg-slate-950 text-slate-100 !important;
+    }
+
+    /* Background overrides */
+    .dark .bg-white {
+        @apply bg-slate-900 !important;
+    }
+    .dark .bg-gray-50 {
+        @apply bg-slate-950 !important;
+    }
+    .dark .bg-gray-100 {
+        @apply bg-slate-800 !important;
+    }
+    .dark .bg-indigo-50 {
+        @apply bg-indigo-950/30 !important;
+    }
+    .dark .bg-blue-50 {
+        @apply bg-blue-950/30 !important;
+    }
+    .dark .bg-green-50 {
+        @apply bg-green-950/30 !important;
+    }
+    .dark .bg-yellow-50 {
+        @apply bg-yellow-950/30 !important;
+    }
+
+    /* Borders */
+    .dark .border-gray-100,
+    .dark .border-gray-150,
+    .dark .border-gray-200,
+    .dark .border-gray-300 {
+        @apply border-slate-800 !important;
+    }
+
+    /* Texts */
+    .dark .text-gray-900,
+    .dark .text-gray-800,
+    .dark .text-gray-750 {
+        @apply text-slate-100 !important;
+    }
+    .dark .text-gray-700,
+    .dark .text-gray-650,
+    .dark .text-gray-600 {
+        @apply text-slate-300 !important;
+    }
+    .dark .text-gray-500,
+    .dark .text-gray-400 {
+        @apply text-slate-400 !important;
+    }
+    .dark .text-indigo-600 {
+        @apply text-indigo-400 !important;
+    }
+    .dark .text-indigo-700 {
+        @apply text-indigo-300 !important;
+    }
+    .dark .text-indigo-800 {
+        @apply text-indigo-200 !important;
+    }
+
+    /* Forms */
+    .dark input,
+    .dark select,
+    .dark textarea {
+        @apply bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-indigo-500 focus:border-indigo-500 !important;
+    }
+
+    /* Tables */
+    .dark table th {
+        @apply bg-slate-900 text-slate-300 border-slate-800 !important;
+    }
+    .dark tr:hover {
+        @apply bg-slate-800/40 !important;
+    }
+
+    /* Scrollbar */
+    .dark ::-webkit-scrollbar {
+        width: 10px;
+    }
+    .dark ::-webkit-scrollbar-track {
+        @apply bg-slate-950;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+        @apply bg-slate-800 rounded hover:bg-slate-700;
+    }
+
+    /* Prose */
+    .dark .prose {
+        @apply text-slate-300 !important;
+    }
+    .dark .prose h1,
+    .dark .prose h2,
+    .dark .prose h3,
+    .dark .prose h4,
+    .dark .prose strong,
+    .dark .prose code {
+        @apply text-slate-100 !important;
+    }
+    .dark .prose a {
+        @apply text-indigo-400 hover:text-indigo-300 !important;
+    }
+}

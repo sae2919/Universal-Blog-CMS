@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use Illuminate\Http\Request;
+
+class SettingController extends Controller
+{
+    public function index()
+    {
+        $settings = Setting::first() ?? new Setting();
+        return view('admin.settings.index', compact('settings'));
+    }
+
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'site_name'               => 'required|string|max:255',
+            'site_tagline'            => 'nullable|string|max:255',
+            'contact_email'           => 'nullable|email',
+            'facebook'                => 'nullable|url',
+            'twitter'                 => 'nullable|url',
+            'linkedin'                => 'nullable|url',
+            'instagram'               => 'nullable|url',
+            'youtube'                 => 'nullable|url',
+            'posts_per_page'          => 'integer|min:1|max:100',
+            'default_meta_title'      => 'nullable|string|max:255',
+            'default_meta_description'=> 'nullable|string|max:500',
+            'google_analytics'        => 'nullable|string',
+            'google_tag_manager'      => 'nullable|string',
+            'site_niche'              => 'required|string',
+            'site_accent_color'       => 'required|string',
+            'site_font'               => 'required|string',
+            'site_layout'             => 'required|in:grid,list,magazine',
+            'site_logo'               => 'nullable|image|max:2048',
+            'site_favicon'            => 'nullable|image|max:512',
+            'default_og_image'        => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('site_logo')) {
+            $validated['site_logo'] = $request->file('site_logo')->store('settings', 'public');
+        }
+        if ($request->hasFile('site_favicon')) {
+            $validated['site_favicon'] = $request->file('site_favicon')->store('settings', 'public');
+        }
+        if ($request->hasFile('default_og_image')) {
+            $validated['default_og_image'] = $request->file('default_og_image')->store('settings', 'public');
+        }
+
+        Setting::updateOrCreate(['id' => 1], $validated);
+
+        // Clear all cached settings
+        Setting::clearCache();
+
+        return redirect()->route('admin.settings.index')->with('success', 'Settings saved!');
+    }
+}
