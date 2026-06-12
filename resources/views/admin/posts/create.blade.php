@@ -329,7 +329,7 @@
         // Base config for all TinyMCE editors
         const baseConfig = {
             plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
-            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image insertslider | removeformat code',
+            toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image insertslider insertimageleft insertimageright | removeformat code',
             branding: false,
             promotion: false,
             link_target_list: [
@@ -352,6 +352,40 @@
                             '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start" style="display:flex; gap:10px; border:1px dashed #ccc; padding:10px; border-radius:8px;">' +
                             '  <img src="https://images.unsplash.com/photo-1516116211223-4c599701b844?w=500" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" />' +
                             '  <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" />' +
+                            '</div><p>&nbsp;</p>'
+                        );
+                    }
+                });
+
+                editor.ui.registry.addButton('insertimageleft', {
+                    text: 'Image Left',
+                    icon: 'template',
+                    tooltip: 'Insert Side-by-Side Block (Image Left / Matter Right)',
+                    onAction: function () {
+                        editor.insertContent(
+                            '<div class="image-split">' +
+                            '  <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800" alt="Python Coding" />' +
+                            '  <div>' +
+                            '    <h3>Python Learning Path</h3>' +
+                            '    <p>Replace this text with your actual content. The image and text will display side-by-side on desktop and stack vertically on mobile screens.</p>' +
+                            '  </div>' +
+                            '</div><p>&nbsp;</p>'
+                        );
+                    }
+                });
+
+                editor.ui.registry.addButton('insertimageright', {
+                    text: 'Image Right',
+                    icon: 'template',
+                    tooltip: 'Insert Side-by-Side Block (Image Right / Matter Left)',
+                    onAction: function () {
+                        editor.insertContent(
+                            '<div class="image-split image-right">' +
+                            '  <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800" alt="Data Science" />' +
+                            '  <div>' +
+                            '    <h3>Data Science Roadmap</h3>' +
+                            '    <p>Replace this text with your actual content. The image will appear on the right side of the text on desktop screens.</p>' +
+                            '  </div>' +
                             '</div><p>&nbsp;</p>'
                         );
                     }
