@@ -9,7 +9,12 @@ class CategoryRepository
 {
     public function getActiveWithPostCount(): Collection
     {
-        return Category::active()->withCount('posts')->orderBy('sort_order')->get();
+        return Category::active()
+            ->withCount(['posts' => function ($query) {
+                $query->published()->forCurrentLocale();
+            }])
+            ->orderBy('sort_order')
+            ->get();
     }
 
     public function findActiveBySlug(string $slug): ?Category

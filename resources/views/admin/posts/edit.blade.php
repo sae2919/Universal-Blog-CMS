@@ -234,6 +234,208 @@
 
         {{-- Right Column (Taxonomy, Image, Publishing) --}}
         <div class="space-y-6">
+            {{-- AI Copilot Widget --}}
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl border border-indigo-150 dark:border-indigo-900 shadow-sm p-6 space-y-4"
+                 x-data="{ 
+                     aiPrompt: '', 
+                     loading: false,
+                     targetLang: 'hi',
+                     generateAll() {
+                         const targetTitle = this.aiPrompt || document.getElementById('title').value;
+                         if(!targetTitle) { alert('Please enter an article title or prompt in the AI input first!'); return; }
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.generate-article') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ title: targetTitle })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if(data.success) {
+                                 document.getElementById('title').value = data.title;
+                                 document.getElementById('excerpt').value = data.excerpt;
+                                 document.getElementById('meta_title').value = data.title;
+                                 document.getElementById('meta_description').value = data.seo_description;
+                                 document.getElementById('meta_keywords').value = data.keywords;
+                                 
+                                 if (tinymce.get('content')) {
+                                     tinymce.get('content').setContent(data.content);
+                                 } else {
+                                     document.getElementById('content').value = data.content;
+                                 }
+                                 alert('AI draft successfully generated and filled in form fields!');
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to contact AI Assistant.'); });
+                     },
+                     auditText() {
+                         const content = tinymce.get('content') ? tinymce.get('content').getContent() : document.getElementById('content').value;
+                         if(!content || content.length < 10) { alert('Write some content first to check grammar!'); return; }
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.check-grammar') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ content: content })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if(data.success) {
+                                 let text = 'Grammar Audit Complete:\n\n' + data.spelling + '\n' + data.grammar + '\n\nTone Suggestions:\n' + data.tone_suggestions.join('\n');
+                                 alert(text);
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to audit grammar.'); });
+                     },
+                     generateImage() {
+                         const prompt = this.aiPrompt || document.getElementById('title').value;
+                         if(!prompt) { alert('Please enter an article title or image prompt first!'); return; }
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.generate-image') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ prompt: prompt })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if(data.success) {
+                                 alert('AI image generated and registered in Media Library!\nFile: ' + data.fileName + '\n\nNote: If you save changes, please verify the image in your files.');
+                                 const previewContainer = document.getElementById('image-preview-container');
+                                 if (previewContainer) {
+                                     previewContainer.innerHTML = `<img src='${data.url}' class='w-full h-32 object-cover rounded-lg border' />
+                                                                   <input type='hidden' name='generated_image_path' value='${data.path}' />`;
+                                 } else {
+                                     const parent = document.getElementById('featured_image').parentElement;
+                                     const preview = document.createElement('div');
+                                     preview.id = 'image-preview-container';
+                                     preview.className = 'mb-2';
+                                     preview.innerHTML = `<img src='${data.url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
+                                                          <input type='hidden' name='generated_image_path' value='${data.path}' />`;
+                                     parent.insertBefore(preview, parent.firstChild);
+                                 }
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to generate image.'); });
+                     },
+                     translatePost() {
+                         const title = document.getElementById('title').value;
+                         const excerpt = document.getElementById('excerpt').value;
+                         const content = tinymce.get('content') ? tinymce.get('content').getContent() : document.getElementById('content').value;
+                         const metaTitle = document.getElementById('meta_title').value;
+                         const metaDescription = document.getElementById('meta_description').value;
+
+                         if (!title || !content) {
+                             alert('Please write or generate some content first before translating!');
+                             return;
+                         }
+
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.translate-post') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({
+                                 title: title,
+                                 excerpt: excerpt,
+                                 content: content,
+                                 meta_title: metaTitle,
+                                 meta_description: metaDescription,
+                                 target_lang: this.targetLang
+                             })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if (data.success) {
+                                 document.getElementById('title').value = data.title;
+                                 document.getElementById('excerpt').value = data.excerpt;
+                                 document.getElementById('meta_title').value = data.meta_title;
+                                 document.getElementById('meta_description').value = data.meta_description;
+                                 
+                                 if (tinymce.get('content')) {
+                                     tinymce.get('content').setContent(data.content);
+                                 } else {
+                                     document.getElementById('content').value = data.content;
+                                 }
+
+                                 document.getElementById('locale').value = this.targetLang;
+                                 alert('Article successfully translated via AI and filled in form fields!');
+                             } else {
+                                 alert(data.message || 'Failed to translate content.');
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to translate content.'); });
+                     }
+                 }">
+                <div class="flex items-center gap-2 border-b border-indigo-100 dark:border-indigo-900 pb-2">
+                    <span class="text-lg">✨</span>
+                    <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm">AI Copilot</h3>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase">AI Prompt / Topic Title</label>
+                        <input x-model="aiPrompt" type="text" placeholder="Topic details or leave blank to use title..."
+                               class="mt-1 block w-full rounded-lg border-indigo-200 dark:border-indigo-900 dark:bg-slate-700 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2 pt-1">
+                        <button type="button" @click="generateAll()" :disabled="loading"
+                                class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
+                            Generate Article Draft
+                        </button>
+                        
+                        <button type="button" @click="generateImage()" :disabled="loading"
+                                class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
+                            Generate Featured Image
+                        </button>
+                        
+                        <button type="button" @click="auditText()" :disabled="loading"
+                                class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
+                            Check Spelling & Grammar
+                        </button>
+                    </div>
+
+                    <div class="border-t border-indigo-100 dark:border-indigo-900 pt-3 space-y-2">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase">AI Auto-Translation</label>
+                        <div class="flex gap-2">
+                            <select x-model="targetLang" class="block w-full rounded-lg border-indigo-200 dark:border-indigo-900 dark:bg-slate-700 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
+                                <option value="en">🇺🇸 English</option>
+                                <option value="fr">🇫🇷 French</option>
+                                <option value="de">🇩🇪 German</option>
+                                <option value="hi">🇮🇳 Hindi</option>
+                                <option value="te">🇮🇳 Telugu</option>
+                            </select>
+                            <button type="button" @click="translatePost()" :disabled="loading"
+                                    class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap">
+                                Translate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="loading" class="flex items-center justify-center gap-2 pt-1" style="display: none;">
+                    <svg class="animate-spin h-3.5 w-3.5 text-indigo-650" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-[10px] font-semibold text-gray-500">AI is processing request...</span>
+                </div>
+            </div>
+
             {{-- Publish Widget --}}
             <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
                 <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Publish Settings</h3>
@@ -287,6 +489,17 @@
                                 {{ $category->name }}
                             </option>
                         @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="locale" class="block text-sm font-semibold text-gray-700">Language (Locale)</label>
+                    <select name="locale" id="locale" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="en" {{ old('locale', $post->locale) === 'en' ? 'selected' : '' }}>🇺🇸 English</option>
+                        <option value="fr" {{ old('locale', $post->locale) === 'fr' ? 'selected' : '' }}>🇫🇷 French</option>
+                        <option value="de" {{ old('locale', $post->locale) === 'de' ? 'selected' : '' }}>🇩🇪 Deutsch</option>
+                        <option value="hi" {{ old('locale', $post->locale) === 'hi' ? 'selected' : '' }}>🇮🇳 हिन्दी</option>
+                        <option value="te" {{ old('locale', $post->locale) === 'te' ? 'selected' : '' }}>🇮🇳 తెలుగు</option>
                     </select>
                 </div>
 

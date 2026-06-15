@@ -11,7 +11,7 @@ class Category extends Model
     use HasFactory, Sluggable;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'image', 'parent_id', 'sort_order', 'status', 'accent_color', 'icon_emoji',
+        'name', 'slug', 'locale', 'description', 'image', 'parent_id', 'sort_order', 'status', 'accent_color', 'icon_emoji',
     ];
 
     // Sluggable config
@@ -52,5 +52,10 @@ class Category extends Model
     public function scopeRoots($query)
     {
         return $query->whereNull('parent_id');
+    }
+
+    public function scopeForCurrentLocale($query)
+    {
+        return $query->where('locale', app()->getLocale());
     }
 }

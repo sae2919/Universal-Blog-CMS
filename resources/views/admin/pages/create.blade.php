@@ -77,6 +77,17 @@
                 </div>
 
                 <div>
+                    <label for="locale" class="block text-sm font-semibold text-gray-700">Language (Locale)</label>
+                    <select name="locale" id="locale" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="en" {{ old('locale', 'en') === 'en' ? 'selected' : '' }}>🇺🇸 English</option>
+                        <option value="fr" {{ old('locale') === 'fr' ? 'selected' : '' }}>🇫🇷 French</option>
+                        <option value="de" {{ old('locale') === 'de' ? 'selected' : '' }}>🇩🇪 German</option>
+                        <option value="hi" {{ old('locale') === 'hi' ? 'selected' : '' }}>🇮🇳 हिन्दी</option>
+                        <option value="te" {{ old('locale') === 'te' ? 'selected' : '' }}>🇮🇳 తెలుగు</option>
+                    </select>
+                </div>
+
+                <div>
                     <label for="featured_image" class="block text-sm font-semibold text-gray-700">Featured Image</label>
                     <input type="file" name="featured_image" id="featured_image"
                            class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">

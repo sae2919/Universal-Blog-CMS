@@ -106,5 +106,47 @@ class DatabaseSeeder extends Seeder
         );
 
         $post->tags()->sync([$tagPython->id, $tagDataScience->id, $tagCareer->id]);
+
+        // 6. Seed Notifications
+        \App\Models\Notification::updateOrCreate(
+            ['title' => '5 New Comments'],
+            [
+                'message' => '5 new comments are pending moderation.',
+                'type' => 'comment',
+                'link' => '/admin/comments',
+                'created_at' => now()->subHours(2),
+            ]
+        );
+
+        \App\Models\Notification::updateOrCreate(
+            ['title' => '2 New Users'],
+            [
+                'message' => '2 new user accounts were registered today.',
+                'type' => 'user',
+                'link' => '/admin/users',
+                'created_at' => now()->subHours(4),
+            ]
+        );
+
+        \App\Models\Notification::updateOrCreate(
+            ['title' => 'SEO Warning'],
+            [
+                'message' => 'Your page "About Us" is missing a meta description.',
+                'type' => 'seo',
+                'link' => '/admin/seo',
+                'created_at' => now()->subDay(),
+            ]
+        );
+
+        \App\Models\Notification::updateOrCreate(
+            ['title' => 'Scheduled Post Published'],
+            [
+                'message' => 'The scheduled post "Python vs Data Science Course" was published.',
+                'type' => 'post',
+                'link' => '/admin/posts',
+                'created_at' => now()->subDays(2),
+            ]
+        );
     }
 }
+

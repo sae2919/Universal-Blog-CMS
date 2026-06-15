@@ -1,3 +1,7 @@
+@php
+    $unreadNotificationsCount = \App\Models\Notification::unread()->count();
+    $latestNotifications = \App\Models\Notification::unread()->latest()->take(5)->get();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -42,6 +46,16 @@
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
                 Dashboard
+            </a>
+
+            <a href="{{ route('admin.analytics') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                      {{ request()->routeIs('admin.analytics') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Analytics
             </a>
 
             <a href="{{ route('admin.posts.index') }}"
@@ -142,6 +156,44 @@
                 Settings
             </a>
 
+            <a href="{{ route('admin.trash.index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                      {{ request()->routeIs('admin.trash.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Trash
+            </a>
+
+            <a href="{{ route('admin.notifications.index') }}"
+               class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium
+                      {{ request()->routeIs('admin.notifications.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span>Notifications</span>
+                </div>
+                @if($unreadNotificationsCount > 0)
+                    <span class="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                        {{ $unreadNotificationsCount }}
+                    </span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.ai.dashboard') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                      {{ request()->routeIs('admin.ai.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>AI Assistant</span>
+            </a>
+
+
             {{-- Divider --}}
             <div class="pt-4 border-t border-gray-700">
                 <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Website</p>
@@ -185,6 +237,111 @@
         <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
             <h1 class="text-lg font-semibold text-gray-800">@yield('header', 'Dashboard')</h1>
             <div class="flex items-center gap-4">
+                {{-- Language Switcher --}}
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.outside="open = false" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+                        @if(app()->getLocale() === 'en')
+                            🇺🇸 EN
+                        @elseif(app()->getLocale() === 'fr')
+                            🇫🇷 FR
+                        @elseif(app()->getLocale() === 'de')
+                            🇩🇪 DE
+                        @elseif(app()->getLocale() === 'hi')
+                            🇮🇳 HI
+                        @elseif(app()->getLocale() === 'te')
+                            🇮🇳 TE
+                        @endif
+                        <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition 
+                         class="absolute right-0 top-full mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-150 py-1 z-55 overflow-hidden">
+                        <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇺🇸 English</a>
+                        <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇫🇷 Français</a>
+                        <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇩🇪 Deutsch</a>
+                        <a href="?lang=hi" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇮🇳 हिन्दी</a>
+                        <a href="?lang=te" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇮🇳 తెలుగు</a>
+                    </div>
+                </div>
+
+                {{-- Notifications Dropdown --}}
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="p-2 rounded-lg text-gray-500 hover:text-indigo-650 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer" title="Notifications">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        @if($unreadNotificationsCount > 0)
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        @endif
+                    </button>
+
+                    <div x-show="open"
+                         @click.away="open = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-150 dark:border-slate-700 shadow-lg py-2 z-50 overflow-hidden"
+                         style="display: none;">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
+                            <span class="font-bold text-sm text-gray-800 dark:text-slate-200">Notifications</span>
+                            @if($unreadNotificationsCount > 0)
+                                <form action="{{ route('admin.notifications.read-all') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold cursor-pointer">Mark all read</button>
+                                </form>
+                            @endif
+                        </div>
+
+                        <div class="max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700">
+                            @forelse($latestNotifications as $notification)
+                                <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
+                                        @if($notification->type === 'comment') bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400
+                                        @elseif($notification->type === 'user') bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-400
+                                        @elseif($notification->type === 'seo') bg-yellow-50 text-yellow-600 dark:bg-yellow-950 dark:text-yellow-400
+                                        @else bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400
+                                        @endif">
+                                        @if($notification->type === 'comment')
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                        @elseif($notification->type === 'user')
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                        @elseif($notification->type === 'seo')
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        @else
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <a href="{{ $notification->link ?? route('admin.notifications.index') }}" class="font-bold text-xs text-gray-900 dark:text-slate-100 hover:underline truncate">{{ $notification->title }}</a>
+                                            <span class="text-[9px] text-gray-400 whitespace-nowrap">{{ $notification->created_at->diffForHumans() }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">{{ $notification->message }}</p>
+                                        
+                                        <form action="{{ route('admin.notifications.read', $notification->id) }}" method="POST" class="mt-1">
+                                            @csrf
+                                            <button type="submit" class="text-[10px] text-indigo-650 dark:text-indigo-400 hover:underline cursor-pointer">Mark read</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="px-4 py-6 text-center text-xs text-gray-500 dark:text-slate-400">
+                                    No new notifications!
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <div class="px-4 py-2.5 border-t border-gray-100 dark:border-slate-700 text-center bg-gray-50 dark:bg-slate-750/30">
+                            <a href="{{ route('admin.notifications.index') }}" class="text-xs text-indigo-650 dark:text-indigo-400 font-semibold hover:underline block">View all notifications</a>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Toggle Theme --}}
                 <button onclick="
                     if (document.documentElement.classList.contains('dark')) {

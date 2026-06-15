@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\AiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +29,9 @@ Route::prefix('admin')
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
         Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('dashboard.analytics');
+
+        // Analytics Dashboard
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
         // Posts CRUD
         Route::resource('posts', PostController::class)->except(['show']);
@@ -61,6 +68,29 @@ Route::prefix('admin')
         // Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+        // Trash Bin
+        Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
+        Route::post('/trash/{type}/{id}/restore', [TrashController::class, 'restore'])->name('trash.restore');
+        Route::delete('/trash/{type}/{id}/force-delete', [TrashController::class, 'forceDelete'])->name('trash.force-delete');
+
+        // Notifications
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read')->whereNumber('id');
+        Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy')->whereNumber('id');
+
+        // AI Assistant
+        Route::get('/ai-assistant', [AiController::class, 'dashboard'])->name('ai.dashboard');
+        Route::post('/ai/generate-article', [AiController::class, 'generateArticle'])->name('ai.generate-article');
+        Route::post('/ai/generate-summary', [AiController::class, 'generateSummary'])->name('ai.generate-summary');
+        Route::post('/ai/generate-tags', [AiController::class, 'generateTags'])->name('ai.generate-tags');
+        Route::post('/ai/generate-keywords', [AiController::class, 'generateKeywords'])->name('ai.generate-keywords');
+        Route::post('/ai/generate-seo-desc', [AiController::class, 'generateSeoDesc'])->name('ai.generate-seo-desc');
+        Route::post('/ai/check-grammar', [AiController::class, 'checkGrammar'])->name('ai.check-grammar');
+        Route::post('/ai/generate-image', [AiController::class, 'generateImage'])->name('ai.generate-image');
+        Route::post('/ai/translate-post', [AiController::class, 'translatePost'])->name('ai.translate-post');
 
         // Redirect to dashboard from /admin
         Route::redirect('/', '/admin/dashboard');

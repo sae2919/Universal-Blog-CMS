@@ -65,7 +65,7 @@
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <div class="flex items-center gap-3 mb-6">
         <span class="w-1 h-6 bg-red-500 rounded-full"></span>
-        <h2 class="text-xl font-bold text-gray-900">🔥 Trending Now</h2>
+        <h2 class="text-xl font-bold text-gray-900">🔥 {{ __('Trending Now') }}</h2>
     </div>
     <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         @foreach($trendingPosts as $i => $post)
@@ -85,7 +85,7 @@
                     <h3 class="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 line-clamp-2 mt-1">{{ $post->title }}</h3>
                     <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        {{ number_format($post->views) }} views
+                        {{ number_format($post->views) }} {{ __('views') }}
                     </p>
                 </div>
             </a>
@@ -102,7 +102,7 @@
         <div class="md:col-span-2">
             <div class="flex items-center gap-3 mb-6">
                 <span class="w-1 h-6 bg-indigo-600 rounded-full"></span>
-                <h2 class="text-xl font-bold text-gray-900">Latest Articles</h2>
+                <h2 class="text-xl font-bold text-gray-900">{{ __('Latest Articles') }}</h2>
             </div>
 
             <div class="space-y-6">
@@ -156,7 +156,7 @@
             <div class="mt-8 text-center">
                 <a href="{{ route('blog.index') }}"
                    class="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold text-sm hover:bg-indigo-700 transition-colors">
-                    View All Articles
+                    {{ __('View All Articles') }}
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                     </svg>
@@ -170,27 +170,35 @@
             {{-- Popular Posts --}}
             <div class="bg-white rounded-xl border border-gray-100 p-5">
                 <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <span class="text-red-500">🔥</span> Most Popular
+                    <span class="text-red-500">🔥</span> {{ __('Most Popular') }}
                 </h3>
                 <div class="space-y-4">
-                    @foreach($popularPosts as $i => $post)
-                        <div class="flex items-start gap-3">
-                            <span class="text-2xl font-black text-gray-100 leading-none mt-1 w-7">{{ $i + 1 }}</span>
-                            <div>
-                                <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}"
-                                   class="text-sm font-medium text-gray-800 hover:text-indigo-600 transition-colors line-clamp-2">
+                    @foreach($popularPosts as $post)
+                        <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="group flex gap-3 hover:text-indigo-600 transition-colors">
+                            @if($post->featured_image)
+                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                                     class="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-100 dark:border-slate-800 group-hover:opacity-90 transition-opacity">
+                            @else
+                                <div class="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-500 font-bold text-[10px] uppercase flex items-center justify-center flex-shrink-0 border border-gray-100 dark:border-slate-800">
+                                    Blog
+                                </div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-semibold text-gray-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 line-clamp-2 leading-snug">
                                     {{ $post->title }}
-                                </a>
-                                <p class="text-xs text-gray-400 mt-1">{{ number_format($post->views) }} views</p>
+                                </h4>
+                                <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+                                    {{ number_format($post->views) }} {{ __('views') }}
+                                </p>
                             </div>
-                        </div>
+                        </a>
                     @endforeach
                 </div>
             </div>
 
             {{-- Categories --}}
             <div class="bg-white rounded-xl border border-gray-100 p-5">
-                <h3 class="font-bold text-gray-900 mb-4">Browse Categories</h3>
+                <h3 class="font-bold text-gray-900 mb-4">{{ __('Browse Categories') }}</h3>
                 <div class="space-y-2">
                     @foreach($categories as $cat)
                         <a href="{{ route('blog.category', $cat->slug) }}"

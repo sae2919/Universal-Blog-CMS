@@ -32,14 +32,15 @@ class BlogController extends Controller
     public function index(Request $request)
     {
         $settings = Setting::first();
+        $locale = app()->getLocale();
 
         $posts = $this->postRepository->getPublishedPaginated($settings?->posts_per_page ?? 10);
 
-        $popularPosts = Cache::remember('posts.popular.sidebar', now()->addHours(2), function () {
+        $popularPosts = Cache::remember("posts.popular.sidebar.{$locale}", now()->addHours(2), function () {
             return $this->postRepository->getPopular(5);
         });
 
-        $categories = Cache::remember('categories.sidebar', now()->addHours(6), function () {
+        $categories = Cache::remember("categories.sidebar.{$locale}", now()->addHours(6), function () {
             return $this->categoryRepository->getActiveWithPostCount();
         });
 
@@ -48,7 +49,9 @@ class BlogController extends Controller
 
     public function showPost(string $categorySlug, string $postSlug)
     {
-        $post = Cache::remember("post.{$postSlug}", now()->addHours(6), function () use ($categorySlug, $postSlug) {
+        $locale = app()->getLocale();
+
+        $post = Cache::remember("post.{$postSlug}.{$locale}", now()->addHours(6), function () use ($categorySlug, $postSlug) {
             return $this->postRepository->findBySlug($categorySlug, $postSlug);
         });
 
@@ -62,17 +65,17 @@ class BlogController extends Controller
             // Increment view count asynchronously
             $this->postService->incrementViewsAsync($post);
 
-            $relatedPosts = Cache::remember("post.related.{$postSlug}", now()->addHours(3), function () use ($post) {
+            $relatedPosts = Cache::remember("post.related.{$postSlug}.{$locale}", now()->addHours(3), function () use ($post) {
                 return $this->postRepository->getRelated($post, 4);
             });
 
-            $trendingPosts = Cache::remember("posts.trending.sidebar", now()->addHours(2), function () {
-                return Post::trending()->take(5)->get();
+            $trendingPosts = Cache::remember("posts.trending.sidebar.{$locale}", now()->addHours(2), function () {
+                return Post::trending()->forCurrentLocale()->take(5)->get();
             });
 
             if ($trendingPosts->isEmpty()) {
-                $trendingPosts = Cache::remember("posts.popular.sidebar.fallback", now()->addHours(2), function () {
-                    return Post::published()->orderByDesc('views')->take(5)->get();
+                $trendingPosts = Cache::remember("posts.popular.sidebar.fallback.{$locale}", now()->addHours(2), function () {
+                    return Post::published()->forCurrentLocale()->orderByDesc('views')->take(5)->get();
                 });
             }
 
@@ -84,7 +87,9 @@ class BlogController extends Controller
 
     public function showPage(string $slug)
     {
-        $page = Cache::remember("page.{$slug}", now()->addHours(6), function () use ($slug) {
+        $locale = app()->getLocale();
+
+        $page = Cache::remember("page.{$slug}.{$locale}", now()->addHours(6), function () use ($slug) {
             return Page::published()->where('slug', $slug)->first();
         });
 
@@ -118,7 +123,14 @@ class BlogController extends Controller
         $validated['post_id']    = $post->id;
         $validated['ip_address'] = $request->ip();
 
-        Comment::create($validated);
+        $comment = Comment::create($validated);
+
+        \App\Models\Notification::create([
+            'title' => 'New Comment Awaiting Approval',
+            'message' => "Comment submitted by {$comment->name} on \"{$post->title}\".",
+            'type' => 'comment',
+            'link' => '/admin/comments'
+        ]);
 
         return back()->with('success', 'Comment submitted! It will appear after moderation.');
     }

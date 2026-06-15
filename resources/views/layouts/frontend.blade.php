@@ -40,14 +40,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 
-    {{-- Dark Mode Init Script --}}
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-    </script>
 
     {{-- Google Analytics --}}
     @if(\App\Models\Setting::getValue('google_analytics'))
@@ -60,7 +52,7 @@
     </script>
     @endif
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100 antialiased" style="font-family: '{{ \App\Models\Setting::getValue('site_font', 'Inter') }}', sans-serif;">
+<body class="bg-gray-50 text-gray-900 antialiased" style="font-family: '{{ \App\Models\Setting::getValue('site_font', 'Inter') }}', sans-serif;">
 
     {{-- Header --}}
     @include('frontend.partials.header')

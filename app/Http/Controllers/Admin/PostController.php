@@ -34,6 +34,7 @@ class PostController extends Controller
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
             'category_id'      => 'required|exists:categories,id',
+            'locale'           => 'required|in:en,fr,de,hi,te',
             'excerpt'          => 'nullable|string',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
@@ -70,6 +71,8 @@ class PostController extends Controller
         if ($request->hasFile('featured_image')) {
             $validated['featured_image'] = $request->file('featured_image')
                 ->store('posts', 'public');
+        } elseif ($request->filled('generated_image_path')) {
+            $validated['featured_image'] = $request->input('generated_image_path');
         }
 
         if ($request->hasFile('cta_bg_image')) {
@@ -100,6 +103,7 @@ class PostController extends Controller
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
             'category_id'      => 'required|exists:categories,id',
+            'locale'           => 'required|in:en,fr,de,hi,te',
             'excerpt'          => 'nullable|string',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
@@ -135,6 +139,8 @@ class PostController extends Controller
         if ($request->hasFile('featured_image')) {
             $validated['featured_image'] = $request->file('featured_image')
                 ->store('posts', 'public');
+        } elseif ($request->filled('generated_image_path')) {
+            $validated['featured_image'] = $request->input('generated_image_path');
         }
 
         if ($request->hasFile('cta_bg_image')) {
@@ -161,13 +167,19 @@ class PostController extends Controller
 
     private function clearPostCaches(?Post $post = null): void
     {
-        Cache::forget('posts.featured');
-        Cache::forget('posts.trending');
-        Cache::forget('posts.latest');
-        Cache::forget('homepage_posts');
-
-        if ($post) {
-            Cache::forget("post.{$post->slug}");
+        $locales = ['en', 'fr', 'de', 'hi', 'te'];
+        foreach ($locales as $locale) {
+            Cache::forget("posts.featured.{$locale}");
+            Cache::forget("posts.trending.{$locale}");
+            Cache::forget("posts.latest.{$locale}");
+            Cache::forget("posts.popular.{$locale}");
+            Cache::forget("posts.popular.sidebar.{$locale}");
+            Cache::forget("categories.main.{$locale}");
+            Cache::forget("categories.sidebar.{$locale}");
+            if ($post) {
+                Cache::forget("post.{$post->slug}.{$locale}");
+                Cache::forget("post.related.{$post->slug}.{$locale}");
+            }
         }
     }
 }

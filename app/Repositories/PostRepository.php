@@ -12,6 +12,7 @@ class PostRepository
     {
         return Post::with('author', 'category', 'tags')
             ->published()
+            ->forCurrentLocale()
             ->latest('published_at')
             ->paginate($perPage);
     }
@@ -19,6 +20,7 @@ class PostRepository
     public function getPopular(int $limit = 5): Collection
     {
         return Post::published()
+            ->forCurrentLocale()
             ->orderByDesc('views')
             ->take($limit)
             ->get();
@@ -27,6 +29,7 @@ class PostRepository
     public function getRelated(Post $post, int $limit = 4): Collection
     {
         $related = Post::published()
+            ->forCurrentLocale()
             ->where('category_id', $post->category_id)
             ->where('id', '!=', $post->id)
             ->latest('published_at')
@@ -35,6 +38,7 @@ class PostRepository
 
         if ($related->isEmpty()) {
             return Post::published()
+                ->forCurrentLocale()
                 ->where('id', '!=', $post->id)
                 ->latest('published_at')
                 ->take($limit)
@@ -59,6 +63,7 @@ class PostRepository
     {
         return Post::with('author', 'category')
             ->published()
+            ->forCurrentLocale()
             ->where('category_id', $categoryId)
             ->latest('published_at')
             ->paginate($perPage);
@@ -68,6 +73,7 @@ class PostRepository
     {
         return Post::with('author', 'category')
             ->published()
+            ->forCurrentLocale()
             ->whereHas('tags', fn($q) => $q->where('slug', $tagSlug))
             ->latest('published_at')
             ->paginate($perPage);
@@ -77,6 +83,7 @@ class PostRepository
     {
         return Post::with('author', 'category')
             ->published()
+            ->forCurrentLocale()
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                   ->orWhere('excerpt', 'like', "%{$query}%")

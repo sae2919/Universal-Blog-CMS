@@ -34,6 +34,7 @@ class SearchService
 
         return \App\Models\Post::with('category')
             ->published()
+            ->forCurrentLocale()
             ->where('title', 'like', "%{$query}%")
             ->latest('published_at')
             ->take(5)

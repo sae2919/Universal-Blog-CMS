@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleRedirects::class,
             \App\Http\Middleware\LogVisits::class,
+            \App\Http\Middleware\SetLocaleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

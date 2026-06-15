@@ -24,6 +24,7 @@ class PageController extends Controller
     {
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
+            'locale'           => 'required|in:en,fr,de,hi,te',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
             'status'           => 'required|in:draft,published',
@@ -54,6 +55,7 @@ class PageController extends Controller
     {
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
+            'locale'           => 'required|in:en,fr,de,hi,te',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
             'status'           => 'required|in:draft,published',

@@ -115,6 +115,9 @@
     margin-bottom: 0.6em;
     line-height: 1.3;
 }
+.prose h2, .prose h3 {
+    scroll-margin-top: 6rem;
+}
 .prose h1 {
     font-size: 2.25rem;
     font-weight: 800;

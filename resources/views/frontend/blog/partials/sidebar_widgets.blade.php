@@ -3,7 +3,7 @@
 @if($trendingPosts->count())
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 shadow-sm">
         <h4 class="font-extrabold text-gray-900 dark:text-slate-100 text-lg mb-4 flex items-center gap-2">
-            <span class="text-red-500">🔥</span> Trending Articles
+            <span class="text-red-500"></span> Trending Articles
         </h4>
         <div class="space-y-4">
             @foreach($trendingPosts as $t)
@@ -32,7 +32,7 @@
 @if($relatedPosts->count())
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 shadow-sm">
         <h4 class="font-extrabold text-gray-900 dark:text-slate-100 text-lg mb-4 flex items-center gap-2">
-            <span class="text-indigo-500">📚</span> Related Articles
+            <span class="text-indigo-500"></span> Related Articles
         </h4>
         <div class="space-y-4">
             @foreach($relatedPosts->take(3) as $r)

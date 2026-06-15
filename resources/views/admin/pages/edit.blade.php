@@ -78,6 +78,17 @@
                 </div>
 
                 <div>
+                    <label for="locale" class="block text-sm font-semibold text-gray-700">Language (Locale)</label>
+                    <select name="locale" id="locale" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="en" {{ old('locale', $page->locale) === 'en' ? 'selected' : '' }}>🇺🇸 English</option>
+                        <option value="fr" {{ old('locale', $page->locale) === 'fr' ? 'selected' : '' }}>🇫🇷 French</option>
+                        <option value="de" {{ old('locale', $page->locale) === 'de' ? 'selected' : '' }}>🇩🇪 German</option>
+                        <option value="hi" {{ old('locale', $page->locale) === 'hi' ? 'selected' : '' }}>🇮🇳 हिन्दी</option>
+                        <option value="te" {{ old('locale', $page->locale) === 'te' ? 'selected' : '' }}>🇮🇳 తెలుగు</option>
+                    </select>
+                </div>
+
+                <div>
                     <label for="featured_image" class="block text-sm font-semibold text-gray-700">Featured Image</label>
                     @if($page->featured_image)
                         <div class="mt-2">

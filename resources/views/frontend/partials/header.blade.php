@@ -49,11 +49,11 @@
                 @else
                     <a href="{{ route('home') }}"
                        class="text-sm font-medium {{ request()->routeIs('home') ? 'text-indigo-600' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
-                        Home
+                        {{ __('Home') }}
                     </a>
                     <a href="{{ route('blog.index') }}"
                        class="text-sm font-medium {{ request()->routeIs('blog.*') ? 'text-indigo-600' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
-                        Blog
+                        {{ __('Blog') }}
                     </a>
 
                     {{-- Categories Dropdown --}}
@@ -66,7 +66,7 @@
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" @click.outside="open = false"
                                 class="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">
-                            Categories
+                            {{ __('Categories') }}
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
@@ -89,7 +89,7 @@
                 <div class="relative" x-data="{ query: '', results: [], showDropdown: false }">
                     <form action="{{ route('blog.search') }}" method="GET" class="flex items-center">
                         <div class="relative">
-                            <input type="text" name="q" placeholder="Search..." autocomplete="off"
+                            <input type="text" name="q" placeholder="{{ __('Search...') }}" autocomplete="off"
                                    x-model="query"
                                    @input.debounce.300ms="
                                        if(query.length >= 2) {
@@ -125,23 +125,35 @@
                     </div>
                 </div>
 
-                {{-- Toggle Theme --}}
-                <button @click="
-                    if (document.documentElement.classList.contains('dark')) {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.theme = 'light';
-                    } else {
-                        document.documentElement.classList.add('dark');
-                        localStorage.theme = 'dark';
-                    }
-                " class="p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" title="Toggle Theme">
-                    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                    </svg>
-                    <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/>
-                    </svg>
-                </button>
+
+                {{-- Language Switcher --}}
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.outside="open = false" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-gray-750 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-850 transition-colors cursor-pointer">
+                        @if(app()->getLocale() === 'en')
+                            🇺🇸 EN
+                        @elseif(app()->getLocale() === 'fr')
+                            🇫🇷 FR
+                        @elseif(app()->getLocale() === 'de')
+                            🇩🇪 DE
+                        @elseif(app()->getLocale() === 'hi')
+                            🇮🇳 HI
+                        @elseif(app()->getLocale() === 'te')
+                            🇮🇳 TE
+                        @endif
+                        <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition 
+                         class="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-150 dark:border-slate-700 py-1 z-55 overflow-hidden">
+                        <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇺🇸 English</a>
+                        <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇫🇷 Français</a>
+                        <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇩🇪 Deutsch</a>
+                        <a href="?lang=hi" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇮🇳 हिन्दी</a>
+                        <a href="?lang=te" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇮🇳 తెలుగు</a>
+                    </div>
+                </div>
             </div>
 
             {{-- Mobile Menu Button --}}
@@ -184,8 +196,8 @@
                     @endif
                 @endforeach
             @else
-                <a href="{{ route('home') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">Home</a>
-                <a href="{{ route('blog.index') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">Blog</a>
+                <a href="{{ route('home') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">{{ __('Home') }}</a>
+                <a href="{{ route('blog.index') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">{{ __('Blog') }}</a>
                 @foreach($navCategories as $cat)
                     <a href="{{ route('blog.category', $cat->slug) }}" class="block py-2 text-sm text-gray-500 hover:text-indigo-600 pl-3">
                         → {{ $cat->name }}
@@ -194,7 +206,7 @@
             @endif
             <div class="relative pt-2" x-data="{ query: '', results: [], showDropdown: false }">
                 <form action="{{ route('blog.search') }}" method="GET">
-                    <input type="text" name="q" placeholder="Search..." autocomplete="off"
+                    <input type="text" name="q" placeholder="{{ __('Search...') }}" autocomplete="off"
                            x-model="query"
                            @input.debounce.300ms="
                                if(query.length >= 2) {
@@ -226,25 +238,17 @@
                 </div>
             </div>
 
-            {{-- Mobile Theme Toggle --}}
-            <div class="pt-4 flex items-center justify-between border-t border-gray-100">
-                <span class="text-sm font-medium text-gray-650">Dark Mode</span>
-                <button @click="
-                    if (document.documentElement.classList.contains('dark')) {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.theme = 'light';
-                    } else {
-                        document.documentElement.classList.add('dark');
-                        localStorage.theme = 'dark';
-                    }
-                " class="p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-gray-100 transition-colors" title="Toggle Theme">
-                    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                    </svg>
-                    <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/>
-                    </svg>
-                </button>
+
+            {{-- Mobile Language Selector --}}
+            <div class="pt-4 border-t border-gray-100 flex flex-col gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">{{ __('Language') }}</span>
+                <div class="grid grid-cols-5 gap-1.5">
+                    <a href="?lang=en" class="px-2 py-1.5 text-center text-xs font-semibold rounded-lg border {{ app()->getLocale() === 'en' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-700' }}">🇺🇸 EN</a>
+                    <a href="?lang=fr" class="px-2 py-1.5 text-center text-xs font-semibold rounded-lg border {{ app()->getLocale() === 'fr' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-700' }}">🇫🇷 FR</a>
+                    <a href="?lang=de" class="px-2 py-1.5 text-center text-xs font-semibold rounded-lg border {{ app()->getLocale() === 'de' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-700' }}">🇩🇪 DE</a>
+                    <a href="?lang=hi" class="px-2 py-1.5 text-center text-xs font-semibold rounded-lg border {{ app()->getLocale() === 'hi' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-700' }}">🇮🇳 HI</a>
+                    <a href="?lang=te" class="px-2 py-1.5 text-center text-xs font-semibold rounded-lg border {{ app()->getLocale() === 'te' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-700' }}">🇮🇳 TE</a>
+                </div>
             </div>
         </div>
     </div>

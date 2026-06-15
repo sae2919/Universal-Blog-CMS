@@ -35,7 +35,7 @@
 
             {{-- Categories Column --}}
             <div>
-                <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Categories</h4>
+                <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{{ __('Categories') }}</h4>
                 <ul class="space-y-2">
                     @php
                         $footerCats = \Illuminate\Support\Facades\Cache::remember('footer.categories', now()->addHours(6), function() {
@@ -55,16 +55,16 @@
 
             {{-- Quick Links --}}
             <div>
-                <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Quick Links</h4>
+                <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{{ __('Quick Links') }}</h4>
                 <ul class="space-y-2">
-                    <li><a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white transition-colors">Home</a></li>
-                    <li><a href="{{ route('blog.index') }}" class="text-sm text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                    <li><a href="{{ route('blog.search') }}" class="text-sm text-gray-400 hover:text-white transition-colors">Search</a></li>
+                    <li><a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('Home') }}</a></li>
+                    <li><a href="{{ route('blog.index') }}" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('Blog') }}</a></li>
+                    <li><a href="{{ route('blog.search') }}" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('Search') }}</a></li>
                     @if(\App\Models\Setting::getValue('contact_email'))
                         <li>
                             <a href="mailto:{{ \App\Models\Setting::getValue('contact_email') }}"
                                class="text-sm text-gray-400 hover:text-white transition-colors">
-                                Contact Us
+                                {{ __('Contact Us') }}
                             </a>
                         </li>
                     @endif
@@ -75,9 +75,9 @@
         {{-- Bottom Bar --}}
         <div class="mt-10 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p class="text-xs text-gray-500">
-                &copy; {{ now()->year }} {{ \App\Models\Setting::getValue('site_name') }}. All rights reserved.
+                &copy; {{ now()->year }} {{ \App\Models\Setting::getValue('site_name') }}. {{ __('All rights reserved.') }}
             </p>
-            <a href="/sitemap.xml" class="text-xs text-gray-600 hover:text-gray-400 transition-colors">Sitemap</a>
+            <a href="/sitemap.xml" class="text-xs text-gray-600 hover:text-gray-400 transition-colors">{{ __('Sitemap') }}</a>
         </div>
     </div>
 </footer>

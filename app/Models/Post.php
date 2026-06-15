@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Post extends Model
 {
-    use HasFactory, Sluggable;
+    use HasFactory, Sluggable, SoftDeletes;
 
     protected $fillable = [
-        'user_id', 'category_id', 'title', 'slug', 'excerpt', 'content', 'faqs', 'featured_image',
+        'user_id', 'category_id', 'locale', 'title', 'slug', 'excerpt', 'content', 'faqs', 'featured_image',
         'status', 'published_at', 'views', 'is_featured', 'is_trending', 'allow_comments',
         'meta_title', 'meta_description', 'meta_keywords',
         'og_title', 'og_description', 'og_image', 'schema_type',
@@ -86,6 +87,11 @@ class Post extends Model
     public function scopeTrending($query)
     {
         return $query->where('is_trending', true)->published();
+    }
+
+    public function scopeForCurrentLocale($query)
+    {
+        return $query->where('locale', app()->getLocale());
     }
 
     // SEO helpers
