@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\MenuItem;
+use App\Models\Page;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -68,7 +70,10 @@ class MenuController extends Controller
             ->with('children')
             ->get();
 
-        return view('admin.menus.builder', compact('menu', 'menuItems'));
+        $pages = Page::published()->orderBy('title')->get();
+        $categories = Category::active()->orderBy('name')->get();
+
+        return view('admin.menus.builder', compact('menu', 'menuItems', 'pages', 'categories'));
     }
 
     public function updateBuilder(Request $request, Menu $menu)
