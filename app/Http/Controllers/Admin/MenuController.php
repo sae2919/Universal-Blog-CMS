@@ -141,5 +141,8 @@ class MenuController extends Controller
         Cache::forget('nav.menu.main');
         Cache::forget('nav.menu.footer');
         Cache::forget('nav.categories');
+        foreach (['en', 'fr', 'de', 'hi', 'te'] as $l) {
+            Cache::forget("nav.pages.footer.{$l}");
+        }
     }
 }

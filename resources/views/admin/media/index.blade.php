@@ -69,13 +69,13 @@
                         {{-- Document Icon based on MIME --}}
                         <div class="text-4xl text-gray-400 select-none">
                             @if(str_contains($media->mime_type, 'pdf'))
-                                📕
+                                
                             @elseif(str_contains($media->mime_type, 'zip') || str_contains($media->mime_type, 'compressed'))
-                                📦
+                                
                             @elseif(str_contains($media->mime_type, 'video') || str_contains($media->mime_type, 'mp4'))
-                                🎬
+                                
                             @else
-                                📄
+                                
                             @endif
                         </div>
                     @endif

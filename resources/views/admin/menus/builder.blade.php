@@ -41,7 +41,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-150 dark:border-slate-700 shadow-sm overflow-hidden">
             <button type="button" @click="activeSection = activeSection === 'pages' ? '' : 'pages'"
                     class="w-full flex justify-between items-center px-5 py-3 font-bold text-sm text-gray-850 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-750 transition-colors">
-                <span class="flex items-center gap-2">📄 {{ __('Pages') }}</span>
+                <span class="flex items-center gap-2"> {{ __('Pages') }}</span>
                 <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': activeSection === 'pages' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -82,7 +82,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-150 dark:border-slate-700 shadow-sm overflow-hidden">
             <button type="button" @click="activeSection = activeSection === 'categories' ? '' : 'categories'"
                     class="w-full flex justify-between items-center px-5 py-3 font-bold text-sm text-gray-850 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-750 transition-colors">
-                <span class="flex items-center gap-2">📁 {{ __('Categories') }}</span>
+                <span class="flex items-center gap-2"> {{ __('Categories') }}</span>
                 <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': activeSection === 'categories' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>

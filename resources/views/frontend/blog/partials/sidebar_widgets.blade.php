@@ -17,8 +17,8 @@
                         </div>
                     @endif
                     <div class="flex-1 min-w-0">
-                        <span class="text-[10px] font-semibold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider block mb-0.5">{{ $t->category->name }}</span>
-                        <h5 class="text-sm font-semibold text-gray-800 dark:text-slate-205 group-hover:text-indigo-650 dark:group-hover:text-indigo-405 line-clamp-2 leading-snug">
+                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block mb-0.5">{{ $t->category->name }}</span>
+                        <h5 class="text-sm font-semibold text-gray-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 line-clamp-2 leading-snug">
                             {{ $t->title }}
                         </h5>
                     </div>
@@ -42,7 +42,7 @@
                              class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-gray-100 dark:border-slate-800 group-hover:opacity-90 transition-opacity">
                     @endif
                     <div class="flex-1 min-w-0">
-                        <h5 class="text-sm font-semibold text-gray-800 dark:text-slate-205 group-hover:text-indigo-650 dark:group-hover:text-indigo-405 line-clamp-2 leading-snug">
+                        <h5 class="text-sm font-semibold text-gray-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 line-clamp-2 leading-snug">
                             {{ $r->title }}
                         </h5>
                         <p class="text-xs text-gray-400 mt-1">{{ $r->published_at->diffForHumans() }}</p>

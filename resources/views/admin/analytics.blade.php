@@ -132,7 +132,7 @@
             <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-slate-800 shadow-sm overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-150 dark:border-slate-800">
                     <h3 class="font-bold text-gray-800 dark:text-slate-100 text-lg flex items-center gap-2">
-                        <span>📈</span> Most Viewed Posts (Lifetime Counter)
+                        <span></span> Most Viewed Posts (Lifetime Counter)
                     </h3>
                 </div>
                 <div class="overflow-x-auto">
@@ -176,7 +176,7 @@
             <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-slate-800 shadow-sm overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-150 dark:border-slate-800">
                     <h3 class="font-bold text-gray-800 dark:text-slate-100 text-lg flex items-center gap-2">
-                        <span>📚</span> Top Categories
+                        <span></span> Top Categories
                     </h3>
                 </div>
                 <div class="overflow-x-auto">
@@ -216,7 +216,7 @@
             {{-- Traffic Sources --}}
             <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-slate-800 shadow-sm p-6 space-y-6">
                 <h3 class="font-bold text-gray-800 dark:text-slate-100 text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3">
-                    <span>🌐</span> Traffic Sources
+                    <span></span> Traffic Sources
                 </h3>
                 <div class="space-y-4">
                     @forelse($sources as $source)
@@ -240,7 +240,7 @@
             {{-- Top Countries --}}
             <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-slate-800 shadow-sm p-6 space-y-6">
                 <h3 class="font-bold text-gray-800 dark:text-slate-100 text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3">
-                    <span>📍</span> Top Countries
+                    <span></span> Top Countries
                 </h3>
                 <div class="space-y-4">
                     @forelse($topCountries as $country)
@@ -264,7 +264,7 @@
             {{-- Devices --}}
             <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-slate-800 shadow-sm p-6 space-y-6">
                 <h3 class="font-bold text-gray-800 dark:text-slate-100 text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3">
-                    <span>💻</span> Devices Used
+                    <span></span> Devices Used
                 </h3>
                 <div class="space-y-4">
                     @forelse($devices as $device)

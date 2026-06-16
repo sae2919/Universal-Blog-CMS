@@ -55,6 +55,10 @@ Route::post('/{categorySlug}/{postSlug}/comment', [BlogController::class, 'store
         'postSlug' => '^[a-zA-Z0-9-_]+$'
     ]);
 
+// Contact Us form submission
+Route::post('/contact-us', [BlogController::class, 'submitContact'])
+    ->name('contact.submit');
+
 // Single static page (Catch-all - MUST be at the bottom)
 Route::get('/{slug}', [BlogController::class, 'showPage'])
     ->name('page.show')

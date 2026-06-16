@@ -93,11 +93,56 @@ class BlogController extends Controller
             return Page::published()->where('slug', $slug)->first();
         });
 
+        if ($slug === 'contact-us') {
+            if (!$page) {
+                $page = new Page([
+                    'title' => 'Contact Us',
+                    'slug' => 'contact-us',
+                    'status' => 'published',
+                    'meta_title' => 'Contact Us — ' . Setting::getValue('site_name'),
+                    'meta_description' => 'Contact Us page description.'
+                ]);
+            }
+            return view('frontend.pages.contact', compact('page'));
+        }
+
+        if ($slug === 'about-us') {
+            if (!$page) {
+                $page = new Page([
+                    'title' => 'About Us',
+                    'slug' => 'about-us',
+                    'status' => 'published',
+                    'meta_title' => 'About Us — ' . Setting::getValue('site_name'),
+                    'meta_description' => 'Learn more about our mission, vision, values, and team.'
+                ]);
+            }
+            return view('frontend.pages.about', compact('page'));
+        }
+
         if ($page) {
             return view('frontend.pages.show', compact('page'));
         }
 
         abort(404);
+    }
+
+    public function submitContact(Request $request)
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:100',
+            'email'   => 'required|email|max:255',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|min:10|max:5000',
+        ]);
+
+        \App\Models\Notification::create([
+            'title'   => 'New Contact Form Submission: ' . $validated['subject'],
+            'message' => "Name: {$validated['name']}\nEmail: {$validated['email']}\n\nMessage:\n{$validated['message']}",
+            'type'    => 'contact',
+            'link'    => '/admin/notifications',
+        ]);
+
+        return back()->with('success', 'Thank you for contacting us! We have received your message and will get back to you shortly.');
     }
 
     public function storeComment(Request $request, string $categorySlug, string $postSlug)

@@ -68,4 +68,62 @@ class MediaController extends Controller
 
         return redirect()->route('admin.media.index')->with('success', 'File deleted successfully!');
     }
+
+    public function jsonList(Request $request)
+    {
+        $search = $request->input('search');
+
+        $mediaList = Media::latest()
+            ->when($search, function ($query) use ($search) {
+                $query->where('file_name', 'like', "%{$search}%");
+            })
+            ->where('mime_type', 'like', 'image/%')
+            ->get()
+            ->map(function ($media) {
+                return [
+                    'id' => $media->id,
+                    'file_name' => $media->file_name,
+                    'url' => $media->url,
+                    'file_path' => $media->file_path,
+                ];
+            });
+
+        return response()->json($mediaList);
+    }
+
+    public function jsonUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp',
+        ]);
+
+        if ($request->file('file')) {
+            $file = $request->file('file');
+            
+            // Generate clean name
+            $originalName = $file->getClientOriginalName();
+            $fileName = pathinfo($originalName, PATHINFO_FILENAME);
+            $extension = $file->getClientOriginalExtension();
+            $cleanName = \Str::slug($fileName) . '-' . time() . '.' . $extension;
+
+            // Store in storage/app/public/uploads
+            $filePath = $file->storeAs('uploads', $cleanName, 'public');
+
+            // Save record
+            $media = Media::create([
+                'file_name'   => $originalName,
+                'file_path'   => $filePath,
+                'mime_type'   => $file->getClientMimeType(),
+                'file_size'   => $file->getSize(),
+                'uploaded_by' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'location' => $media->url,
+                'path' => $media->file_path,
+            ]);
+        }
+
+        return response()->json(['error' => 'Failed to upload file.'], 400);
+    }
 }

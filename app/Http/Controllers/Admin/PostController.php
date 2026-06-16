@@ -82,6 +82,13 @@ class PostController extends Controller
 
         $validated['user_id'] = auth()->id();
 
+        // Handle published_at logic for immediately published posts
+        if ($validated['status'] === 'published') {
+            if (empty($validated['published_at']) || \Carbon\Carbon::parse($validated['published_at'])->isFuture()) {
+                $validated['published_at'] = now();
+            }
+        }
+
         $post = Post::create($validated);
         $post->tags()->sync($request->tags ?? []);
 
@@ -137,15 +144,36 @@ class PostController extends Controller
         ]);
 
         if ($request->hasFile('featured_image')) {
+            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
+                \Storage::disk('public')->delete($post->featured_image);
+            }
             $validated['featured_image'] = $request->file('featured_image')
                 ->store('posts', 'public');
         } elseif ($request->filled('generated_image_path')) {
+            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
+                \Storage::disk('public')->delete($post->featured_image);
+            }
             $validated['featured_image'] = $request->input('generated_image_path');
+        } elseif ($request->boolean('remove_featured_image')) {
+            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
+                \Storage::disk('public')->delete($post->featured_image);
+            }
+            $validated['featured_image'] = null;
         }
 
         if ($request->hasFile('cta_bg_image')) {
+            if ($post->cta_bg_image && \Storage::disk('public')->exists($post->cta_bg_image)) {
+                \Storage::disk('public')->delete($post->cta_bg_image);
+            }
             $validated['cta_bg_image'] = $request->file('cta_bg_image')
                 ->store('ctas', 'public');
+        }
+
+        // Handle published_at logic for immediately published posts
+        if ($validated['status'] === 'published') {
+            if (empty($validated['published_at']) || \Carbon\Carbon::parse($validated['published_at'])->isFuture()) {
+                $validated['published_at'] = now();
+            }
         }
 
         $post->update($validated);

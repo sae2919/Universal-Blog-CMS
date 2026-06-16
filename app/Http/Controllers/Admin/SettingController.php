@@ -20,6 +20,8 @@ class SettingController extends Controller
             'site_name'               => 'required|string|max:255',
             'site_tagline'            => 'nullable|string|max:255',
             'contact_email'           => 'nullable|email',
+            'contact_phone'           => 'nullable|string|max:50',
+            'office_address'          => 'nullable|string|max:1000',
             'facebook'                => 'nullable|url',
             'twitter'                 => 'nullable|url',
             'linkedin'                => 'nullable|url',

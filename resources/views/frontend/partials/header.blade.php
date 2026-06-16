@@ -3,9 +3,9 @@
         <div class="flex items-center justify-between h-16">
 
             {{-- Logo --}}
-            <a href="{{ route('home') }}" class="flex items-center gap-2">
+            <a href="{{ url('/') }}" class="flex items-center gap-2">
                 @if(\App\Models\Setting::getValue('site_logo'))
-                    <img src="{{ asset(\App\Models\Setting::getValue('site_logo')) }}"
+                    <img src="{{ asset('storage/' . \App\Models\Setting::getValue('site_logo')) }}"
                          alt="{{ \App\Models\Setting::getValue('site_name') }}"
                          class="h-8 w-auto">
                 @else
@@ -17,20 +17,28 @@
 
             {{-- Desktop Navigation --}}
             <nav class="hidden md:flex items-center gap-6">
+                <a href="{{ url('/') }}"
+                   class="text-sm font-medium {{ request()->routeIs('home') ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
+                    {{ __('Home') }}
+                </a>
+
                 @if(isset($mainMenu) && $mainMenu && $mainMenu->items->isNotEmpty())
                     @foreach($mainMenu->items as $item)
                         @if($item->children->isNotEmpty())
                             {{-- Dropdown --}}
-                            <div class="relative" x-data="{ open: false }">
-                                <button @click="open = !open" @click.outside="open = false"
-                                        class="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors">
+                            <div class="relative flex items-center gap-0.5" x-data="{ open: false }" @click.outside="open = false">
+                                <a href="{{ $item->url === '#' ? route('blog.index') : $item->url }}" target="{{ $item->target }}"
+                                   class="text-sm font-medium {{ (request()->url() == url($item->url) || ($item->url === '#' && request()->routeIs('blog.*'))) ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
                                     {{ $item->title }}
-                                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                </a>
+                                <button @click="open = !open"
+                                        class="p-1 text-gray-500 hover:text-indigo-600 focus:outline-none transition-colors">
+                                    <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
                                 <div x-show="open" x-transition
-                                     class="absolute top-full left-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 py-2 z-50">
+                                     class="absolute top-full left-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-150 dark:border-slate-700 py-2 z-55">
                                     @foreach($item->children as $child)
                                         <a href="{{ $child->url }}" target="{{ $child->target }}"
                                            class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">
@@ -41,16 +49,12 @@
                             </div>
                         @else
                             <a href="{{ $item->url }}" target="{{ $item->target }}"
-                               class="text-sm font-medium {{ request()->url() == url($item->url) ? 'text-indigo-650 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
+                               class="text-sm font-medium {{ request()->url() == url($item->url) ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
                                 {{ $item->title }}
                             </a>
                         @endif
                     @endforeach
                 @else
-                    <a href="{{ route('home') }}"
-                       class="text-sm font-medium {{ request()->routeIs('home') ? 'text-indigo-600' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
-                        {{ __('Home') }}
-                    </a>
                     <a href="{{ route('blog.index') }}"
                        class="text-sm font-medium {{ request()->routeIs('blog.*') ? 'text-indigo-600' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
                         {{ __('Blog') }}
@@ -82,50 +86,19 @@
                         </div>
                     </div>
                 @endif
+
+                @if(isset($headerPages) && $headerPages->isNotEmpty())
+                    @foreach($headerPages as $page)
+                        <a href="{{ url('/' . $page->slug) }}"
+                           class="text-sm font-medium {{ request()->url() == url($page->slug) ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
+                            {{ $page->title }}
+                        </a>
+                    @endforeach
+                @endif
             </nav>
 
-            {{-- Search & Theme Switcher --}}
+            {{-- Right Area (Language Switcher) --}}
             <div class="hidden md:flex items-center gap-4">
-                <div class="relative" x-data="{ query: '', results: [], showDropdown: false }">
-                    <form action="{{ route('blog.search') }}" method="GET" class="flex items-center">
-                        <div class="relative">
-                            <input type="text" name="q" placeholder="{{ __('Search...') }}" autocomplete="off"
-                                   x-model="query"
-                                   @input.debounce.300ms="
-                                       if(query.length >= 2) {
-                                           fetch('{{ route('blog.search.autocomplete') }}?q=' + encodeURIComponent(query))
-                                               .then(res => res.json())
-                                               .then(data => { results = data; showDropdown = true; })
-                                       } else {
-                                           results = []; showDropdown = false;
-                                       }
-                                   "
-                                   @focus="if(query.length >= 2) showDropdown = true"
-                                   @click.outside="showDropdown = false"
-                                   class="w-48 pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all focus:w-64">
-                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                    </form>
-
-                    {{-- Autocomplete Dropdown --}}
-                    <div x-show="showDropdown && results.length > 0" x-transition
-                         class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-150 py-2 z-55 divide-y divide-gray-100 max-h-96 overflow-y-auto"
-                         style="display: none;">
-                        <template x-for="item in results" :key="item.url">
-                            <a :href="item.url" class="block px-4 py-3 hover:bg-indigo-50/50 transition-colors">
-                                <div class="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 uppercase">
-                                    <span x-text="item.category_emoji"></span>
-                                    <span x-text="item.category_name"></span>
-                                </div>
-                                <div class="text-sm font-semibold text-gray-800 line-clamp-2 mt-0.5" x-text="item.title"></div>
-                            </a>
-                        </template>
-                    </div>
-                </div>
-
-
                 {{-- Language Switcher --}}
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.outside="open = false" 
@@ -146,12 +119,13 @@
                         </svg>
                     </button>
                     <div x-show="open" x-transition 
-                         class="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-150 dark:border-slate-700 py-1 z-55 overflow-hidden">
-                        <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇺🇸 English</a>
-                        <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇫🇷 Français</a>
-                        <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇩🇪 Deutsch</a>
-                        <a href="?lang=hi" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇮🇳 हिन्दी</a>
-                        <a href="?lang=te" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-650 transition-colors">🇮🇳 తెలుగు</a>
+                         class="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-150 dark:border-slate-700 py-1 z-55 overflow-hidden"
+                         style="display: none;">
+                        <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">🇺🇸 English</a>
+                        <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">🇫🇷 Français</a>
+                        <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">🇩🇪 Deutsch</a>
+                        <a href="?lang=hi" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">🇮🇳 हिन्दी</a>
+                        <a href="?lang=te" class="block px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-colors">🇮🇳 తెలుగు</a>
                     </div>
                 </div>
             </div>
@@ -171,17 +145,25 @@
     {{-- Mobile Menu --}}
     <div x-show="mobileOpen" x-transition class="md:hidden bg-white border-t border-gray-100">
         <div class="px-4 py-3 space-y-2">
+            <a href="{{ url('/') }}" class="block py-2 text-sm {{ request()->routeIs('home') ? 'text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600' }}">
+                {{ __('Home') }}
+            </a>
             @if(isset($mainMenu) && $mainMenu && $mainMenu->items->isNotEmpty())
                 @foreach($mainMenu->items as $item)
                     @if($item->children->isNotEmpty())
-                        <div x-data="{ open: false }">
-                            <button @click="open = !open" class="flex items-center justify-between w-full py-2 text-sm text-gray-700 hover:text-indigo-600">
-                                <span>{{ $item->title }}</span>
-                                <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <div x-show="open" class="pl-4 space-y-1">
+                        <div x-data="{ open: false }" class="border-b border-gray-50 pb-1">
+                            <div class="flex items-center justify-between py-1">
+                                <a href="{{ $item->url === '#' ? route('blog.index') : $item->url }}" target="{{ $item->target }}" 
+                                   class="text-sm text-gray-750 hover:text-indigo-600 font-medium">
+                                    {{ $item->title }}
+                                </a>
+                                <button @click="open = !open" class="p-2 text-gray-500 hover:text-indigo-600 focus:outline-none">
+                                    <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div x-show="open" class="pl-4 space-y-1 pb-2">
                                 @foreach($item->children as $child)
                                     <a href="{{ $child->url }}" target="{{ $child->target }}" class="block py-1.5 text-xs text-gray-500 hover:text-indigo-600">
                                         {{ $child->title }}
@@ -190,13 +172,12 @@
                             </div>
                         </div>
                     @else
-                        <a href="{{ $item->url }}" target="{{ $item->target }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">
+                        <a href="{{ $item->url === '#' ? route('blog.index') : $item->url }}" target="{{ $item->target }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">
                             {{ $item->title }}
                         </a>
                     @endif
                 @endforeach
             @else
-                <a href="{{ route('home') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">{{ __('Home') }}</a>
                 <a href="{{ route('blog.index') }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">{{ __('Blog') }}</a>
                 @foreach($navCategories as $cat)
                     <a href="{{ route('blog.category', $cat->slug) }}" class="block py-2 text-sm text-gray-500 hover:text-indigo-600 pl-3">
@@ -204,40 +185,13 @@
                     </a>
                 @endforeach
             @endif
-            <div class="relative pt-2" x-data="{ query: '', results: [], showDropdown: false }">
-                <form action="{{ route('blog.search') }}" method="GET">
-                    <input type="text" name="q" placeholder="{{ __('Search...') }}" autocomplete="off"
-                           x-model="query"
-                           @input.debounce.300ms="
-                               if(query.length >= 2) {
-                                   fetch('{{ route('blog.search.autocomplete') }}?q=' + encodeURIComponent(query))
-                                       .then(res => res.json())
-                                       .then(data => { results = data; showDropdown = true; })
-                               } else {
-                                   results = []; showDropdown = false;
-                               }
-                           "
-                           @focus="if(query.length >= 2) showDropdown = true"
-                           @click.outside="showDropdown = false"
-                           class="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                </form>
-
-                {{-- Autocomplete Dropdown (Mobile) --}}
-                <div x-show="showDropdown && results.length > 0" x-transition
-                     class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-150 py-2 z-55 divide-y divide-gray-100 max-h-60 overflow-y-auto"
-                     style="display: none;">
-                    <template x-for="item in results" :key="item.url">
-                        <a :href="item.url" class="block px-4 py-2.5 hover:bg-indigo-50/50 transition-colors">
-                            <div class="flex items-center gap-1.5 text-[9px] font-bold text-indigo-600 uppercase">
-                                <span x-text="item.category_emoji"></span>
-                                <span x-text="item.category_name"></span>
-                            </div>
-                            <div class="text-xs font-semibold text-gray-800 line-clamp-1 mt-0.5" x-text="item.title"></div>
-                        </a>
-                    </template>
-                </div>
-            </div>
-
+            @if(isset($headerPages) && $headerPages->isNotEmpty())
+                @foreach($headerPages as $page)
+                    <a href="{{ url('/' . $page->slug) }}" class="block py-2 text-sm text-gray-700 hover:text-indigo-600">
+                        {{ $page->title }}
+                    </a>
+                @endforeach
+            @endif
 
             {{-- Mobile Language Selector --}}
             <div class="pt-4 border-t border-gray-100 flex flex-col gap-2">

@@ -47,6 +47,10 @@ Route::prefix('admin')
         // Media Library CRUD
         Route::resource('media', App\Http\Controllers\Admin\MediaController::class)->except(['show', 'edit', 'update']);
 
+        // Media Library JSON/Async endpoints
+        Route::get('media-json', [App\Http\Controllers\Admin\MediaController::class, 'jsonList'])->name('media.json-list');
+        Route::post('media-json/upload', [App\Http\Controllers\Admin\MediaController::class, 'jsonUpload'])->name('media.json-upload');
+
         // SEO Diagnostics CRUD/Overview
         Route::get('seo', [App\Http\Controllers\Admin\SeoController::class, 'index'])->name('seo.index');
 

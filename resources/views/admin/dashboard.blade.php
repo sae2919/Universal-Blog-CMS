@@ -73,7 +73,7 @@
 
     {{-- Analytics Chart Section --}}
     <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6">
-        <h3 class="font-bold text-gray-800 text-lg mb-4">📈 Visitor Traffic (Last 7 Days)</h3>
+        <h3 class="font-bold text-gray-800 text-lg mb-4"> Visitor Traffic (Last 7 Days)</h3>
         <div class="h-64 relative w-full">
             <canvas id="analyticsChart"></canvas>
         </div>

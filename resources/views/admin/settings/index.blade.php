@@ -17,7 +17,7 @@
         {{-- Section 1: General Settings --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                ⚡ General Settings
+                 General Settings
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -38,6 +38,7 @@
                 <div>
                     <label for="contact_email" class="block text-sm font-semibold text-gray-700">Contact Email</label>
                     <input type="email" name="contact_email" id="contact_email" value="{{ old('contact_email', $settings->contact_email) }}"
+                           placeholder="support@findmyguru.com"
                            class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
 
@@ -45,6 +46,22 @@
                     <label for="posts_per_page" class="block text-sm font-semibold text-gray-700">Posts Per Page (Pagination)</label>
                     <input type="number" name="posts_per_page" id="posts_per_page" value="{{ old('posts_per_page', $settings->posts_per_page ?? 10) }}"
                            class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="contact_phone" class="block text-sm font-semibold text-gray-700">Contact Phone</label>
+                    <input type="text" name="contact_phone" id="contact_phone" value="{{ old('contact_phone', $settings->contact_phone) }}"
+                           placeholder="+917680097094"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label for="office_address" class="block text-sm font-semibold text-gray-700">Office Address</label>
+                    <textarea name="office_address" id="office_address" rows="2"
+                              placeholder="501, Manjeera Majestic Commercial, KPHB, Hyderabad, India - 500072"
+                              class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('office_address', $settings->office_address) }}</textarea>
                 </div>
             </div>
 
@@ -84,7 +101,7 @@
         {{-- Section 2: Personalization & Layout Niche --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                🎨 Universal Personalization
+                 Universal Personalization
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
@@ -132,7 +149,7 @@
         {{-- Section 3: SEO Defaults --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                📈 Global SEO Metadata
+                 Global SEO Metadata
             </h3>
             <div class="grid grid-cols-1 gap-6">
                 <div>
@@ -152,7 +169,7 @@
         {{-- Section 4: Social Links --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                💬 Social Media Profiles
+                 Social Media Profiles
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -192,7 +209,7 @@
         {{-- Section 5: Analytics --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                📊 Third Party Analytics
+                 Third Party Analytics
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -212,7 +229,7 @@
         {{-- Section 6: Global Call-to-Action (CTA) --}}
         <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
             <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-                📢 Global Call-to-Action (CTA)
+                 Global Call-to-Action (CTA)
             </h3>
             <p class="text-xs text-gray-400">This CTA will be displayed at the bottom of all pages across your website (e.g. homepage, category index, tag index, pages). Leave these fields blank to disable it.</p>
             

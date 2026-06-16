@@ -8,6 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="google" content="notranslate">
 
     <title>@yield('title', 'Admin Panel') — {{ config('app.name') }}</title>
 
@@ -32,7 +33,7 @@
         {{-- Logo --}}
         <div class="h-16 flex items-center px-6 border-b border-gray-700">
             <a href="{{ route('admin.dashboard') }}" class="text-xl font-bold text-white tracking-tight">
-                ⚡ {{ config('app.name') }}
+                 {{ config('app.name') }}
             </a>
         </div>
 
@@ -257,7 +258,8 @@
                         </svg>
                     </button>
                     <div x-show="open" x-transition 
-                         class="absolute right-0 top-full mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-150 py-1 z-55 overflow-hidden">
+                         class="absolute right-0 top-full mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-150 py-1 z-55 overflow-hidden"
+                         style="display: none;">
                         <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇺🇸 English</a>
                         <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇫🇷 Français</a>
                         <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇩🇪 Deutsch</a>

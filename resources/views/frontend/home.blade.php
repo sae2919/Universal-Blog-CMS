@@ -170,7 +170,7 @@
             {{-- Popular Posts --}}
             <div class="bg-white rounded-xl border border-gray-100 p-5">
                 <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <span class="text-red-500">🔥</span> {{ __('Most Popular') }}
+                    <span class="text-red-500"></span> {{ __('Most Popular') }}
                 </h3>
                 <div class="space-y-4">
                     @foreach($popularPosts as $post)

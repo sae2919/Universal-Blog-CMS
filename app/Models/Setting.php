@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 class Setting extends Model
 {
     protected $fillable = [
-        'site_name', 'site_tagline', 'site_logo', 'site_favicon', 'contact_email',
+        'site_name', 'site_tagline', 'site_logo', 'site_favicon', 'contact_email', 'contact_phone', 'office_address',
         'facebook', 'twitter', 'linkedin', 'instagram', 'youtube',
         'posts_per_page', 'default_meta_title', 'default_meta_description',
         'google_analytics', 'google_tag_manager',
@@ -23,7 +23,8 @@ class Setting extends Model
     {
         return Cache::rememberForever("setting.{$key}", function () use ($key, $default) {
             $setting = self::first();
-            return $setting?->{$key} ?? $default;
+            $val = $setting?->{$key};
+            return ($val !== null && $val !== '') ? $val : $default;
         });
     }
 

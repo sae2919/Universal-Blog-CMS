@@ -15,7 +15,7 @@
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('meta_title', \App\Models\Setting::getValue('site_name'))">
     <meta property="og:description" content="@yield('meta_description', '')">
-    <meta property="og:image" content="@yield('og_image', asset(\App\Models\Setting::getValue('default_og_image', '')))">
+    <meta property="og:image" content="@yield('og_image', \App\Models\Setting::getValue('default_og_image') ? asset('storage/' . \App\Models\Setting::getValue('default_og_image')) : '')">
     <meta property="og:url" content="{{ request()->url() }}">
     <meta property="og:site_name" content="{{ \App\Models\Setting::getValue('site_name') }}">
 
@@ -30,7 +30,7 @@
 
     {{-- Favicon --}}
     @if(\App\Models\Setting::getValue('site_favicon'))
-        <link rel="icon" href="{{ asset(\App\Models\Setting::getValue('site_favicon')) }}">
+        <link rel="icon" href="{{ asset('storage/' . \App\Models\Setting::getValue('site_favicon')) }}">
     @endif
 
     {{-- Fonts --}}

@@ -7,7 +7,7 @@
 <div x-data="{ activeTab: 'writer' }" class="space-y-6 max-w-6xl mx-auto">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-xl font-bold text-gray-800 dark:text-slate-100">✨ AI Assistant</h2>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-slate-100"> AI Assistant</h2>
             <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
                 Automate your workflow with AI content writing, instant grammar audits, and stock image asset generation.
             </p>
@@ -21,19 +21,19 @@
                     type="button"
                     :class="activeTab === 'writer' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'"
                     class="py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 focus:outline-none cursor-pointer">
-                📝 AI Content Generator
+                 AI Content Generator
             </button>
             <button @click="activeTab = 'grammar'"
                     type="button"
                     :class="activeTab === 'grammar' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'"
                     class="py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 focus:outline-none cursor-pointer">
-                🔍 AI Grammar Checker
+                 AI Grammar Checker
             </button>
             <button @click="activeTab = 'designer'"
                     type="button"
                     :class="activeTab === 'designer' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-200'"
                     class="py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 focus:outline-none cursor-pointer">
-                🎨 AI Image Generator
+                 AI Image Generator
             </button>
         </nav>
     </div>
@@ -79,7 +79,7 @@
 
             <button @click="generate()" :disabled="loading"
                     class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
-                <span x-show="!loading">⚡ Generate Article</span>
+                <span x-show="!loading"> Generate Article</span>
                 <span x-show="loading" class="flex items-center gap-1.5">
                     <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -191,7 +191,7 @@
 
             <button @click="audit()" :disabled="loading"
                     class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
-                <span x-show="!loading">🔍 Audit Grammar & Spelling</span>
+                <span x-show="!loading"> Audit Grammar & Spelling</span>
                 <span x-show="loading" class="flex items-center gap-1.5">
                     <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -310,7 +310,7 @@
 
             <button @click="generate()" :disabled="loading"
                     class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
-                <span x-show="!loading">🎨 Generate Stock Asset</span>
+                <span x-show="!loading"> Generate Stock Asset</span>
                 <span x-show="loading" class="flex items-center gap-1.5">
                     <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

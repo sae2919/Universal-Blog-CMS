@@ -9,7 +9,7 @@
     <header class="bg-slate-900 rounded-2xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
         <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl"></div>
         <div class="relative z-10 max-w-2xl space-y-4">
-            <span class="text-xs font-bold tracking-widest uppercase bg-indigo-650 text-indigo-100 px-3 py-1 rounded-full border border-indigo-500/35">
+            <span class="text-xs font-bold tracking-widest uppercase bg-indigo-600 text-indigo-100 px-3 py-1 rounded-full border border-indigo-500/35">
                 Tag Keywords
             </span>
             <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">

@@ -28,6 +28,8 @@ class PageController extends Controller
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
             'status'           => 'required|in:draft,published',
+            'show_in_header'   => 'boolean',
+            'show_in_footer'   => 'boolean',
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords'    => 'nullable|string|max:255',
@@ -36,11 +38,20 @@ class PageController extends Controller
         if ($request->hasFile('featured_image')) {
             $validated['featured_image'] = $request->file('featured_image')
                 ->store('pages', 'public');
+        } elseif ($request->filled('generated_image_path')) {
+            $validated['featured_image'] = $request->input('generated_image_path');
         }
+
+        $validated['show_in_header'] = $request->boolean('show_in_header');
+        $validated['show_in_footer'] = $request->boolean('show_in_footer');
 
         Page::create($validated);
 
         Cache::forget('frontend_pages');
+        foreach (['en', 'fr', 'de', 'hi', 'te'] as $l) {
+            Cache::forget("nav.pages.footer.{$l}");
+            Cache::forget("nav.pages.header.{$l}");
+        }
 
         return redirect()->route('admin.pages.index')
             ->with('success', 'Page created successfully!');
@@ -59,20 +70,42 @@ class PageController extends Controller
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
             'status'           => 'required|in:draft,published',
+            'show_in_header'   => 'boolean',
+            'show_in_footer'   => 'boolean',
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords'    => 'nullable|string|max:255',
         ]);
 
         if ($request->hasFile('featured_image')) {
+            if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
+                \Storage::disk('public')->delete($page->featured_image);
+            }
             $validated['featured_image'] = $request->file('featured_image')
                 ->store('pages', 'public');
+        } elseif ($request->filled('generated_image_path')) {
+            if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
+                \Storage::disk('public')->delete($page->featured_image);
+            }
+            $validated['featured_image'] = $request->input('generated_image_path');
+        } elseif ($request->boolean('remove_featured_image')) {
+            if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
+                \Storage::disk('public')->delete($page->featured_image);
+            }
+            $validated['featured_image'] = null;
         }
+
+        $validated['show_in_header'] = $request->boolean('show_in_header');
+        $validated['show_in_footer'] = $request->boolean('show_in_footer');
 
         $page->update($validated);
 
-        Cache::forget("page.{$page->slug}");
         Cache::forget('frontend_pages');
+        foreach (['en', 'fr', 'de', 'hi', 'te'] as $l) {
+            Cache::forget("page.{$page->slug}.{$l}");
+            Cache::forget("nav.pages.footer.{$l}");
+            Cache::forget("nav.pages.header.{$l}");
+        }
 
         return redirect()->route('admin.pages.index')
             ->with('success', 'Page updated successfully!');
@@ -80,8 +113,12 @@ class PageController extends Controller
 
     public function destroy(Page $page)
     {
-        Cache::forget("page.{$page->slug}");
         Cache::forget('frontend_pages');
+        foreach (['en', 'fr', 'de', 'hi', 'te'] as $l) {
+            Cache::forget("page.{$page->slug}.{$l}");
+            Cache::forget("nav.pages.footer.{$l}");
+            Cache::forget("nav.pages.header.{$l}");
+        }
 
         $page->delete();
 

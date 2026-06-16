@@ -75,7 +75,7 @@ class Post extends Model
     // Scopes
     public function scopePublished($query)
     {
-        return $query->where('status', 'published')
+        return $query->whereIn('status', ['published', 'scheduled'])
                      ->where('published_at', '<=', now());
     }
 
