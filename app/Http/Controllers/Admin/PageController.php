@@ -33,6 +33,7 @@ class PageController extends Controller
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords'    => 'nullable|string|max:255',
+            'image_metadata'   => 'nullable|string',
         ]);
 
         if ($request->hasFile('featured_image')) {
@@ -44,6 +45,10 @@ class PageController extends Controller
 
         $validated['show_in_header'] = $request->boolean('show_in_header');
         $validated['show_in_footer'] = $request->boolean('show_in_footer');
+        if ($request->has('image_metadata')) {
+            $meta = $request->input('image_metadata');
+            $validated['image_metadata'] = is_string($meta) ? json_decode($meta, true) : null;
+        }
 
         Page::create($validated);
 
@@ -75,6 +80,7 @@ class PageController extends Controller
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords'    => 'nullable|string|max:255',
+            'image_metadata'   => 'nullable|string',
         ]);
 
         if ($request->hasFile('featured_image')) {
@@ -97,6 +103,10 @@ class PageController extends Controller
 
         $validated['show_in_header'] = $request->boolean('show_in_header');
         $validated['show_in_footer'] = $request->boolean('show_in_footer');
+        if ($request->has('image_metadata')) {
+            $meta = $request->input('image_metadata');
+            $validated['image_metadata'] = is_string($meta) ? json_decode($meta, true) : null;
+        }
 
         $page->update($validated);
 

@@ -17,6 +17,7 @@
     <form action="{{ route('admin.posts.update', $post->id) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         @csrf
         @method('PUT')
+        <input type="hidden" name="image_metadata" id="image_metadata_input">
 
         {{-- Left Column (Post content, Body, SEO) --}}
         <div class="lg:col-span-2 space-y-6">
@@ -247,97 +248,119 @@
                      loading: false,
                      targetLang: 'hi',
                      generateAll() {
-                         const targetTitle = this.aiPrompt || document.getElementById('title').value;
-                         if(!targetTitle) { alert('Please enter an article title or prompt in the AI input first!'); return; }
-                         this.loading = true;
-                         fetch('{{ route('admin.ai.generate-article') }}', {
-                             method: 'POST',
-                             headers: {
-                                 'Content-Type': 'application/json',
-                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                             },
-                             body: JSON.stringify({ title: targetTitle })
-                         })
-                         .then(res => res.json())
-                         .then(data => {
-                             this.loading = false;
-                             if(data.success) {
-                                 document.getElementById('title').value = data.title;
-                                 document.getElementById('excerpt').value = data.excerpt;
-                                 document.getElementById('meta_title').value = data.title;
-                                 document.getElementById('meta_description').value = data.seo_description;
-                                 document.getElementById('meta_keywords').value = data.keywords;
-                                 
-                                 if (tinymce.get('content')) {
-                                     tinymce.get('content').setContent(data.content);
-                                 } else {
-                                     document.getElementById('content').value = data.content;
-                                 }
-                                 alert('AI draft successfully generated and filled in form fields!');
-                             }
-                         })
-                         .catch(() => { this.loading = false; alert('Failed to contact AI Assistant.'); });
-                     },
-                     auditText() {
-                         const content = tinymce.get('content') ? tinymce.get('content').getContent() : document.getElementById('content').value;
-                         if(!content || content.length < 10) { alert('Write some content first to check grammar!'); return; }
-                         this.loading = true;
-                         fetch('{{ route('admin.ai.check-grammar') }}', {
-                             method: 'POST',
-                             headers: {
-                                 'Content-Type': 'application/json',
-                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                             },
-                             body: JSON.stringify({ content: content })
-                         })
-                         .then(res => res.json())
-                         .then(data => {
-                             this.loading = false;
-                             if(data.success) {
-                                 let text = 'Grammar Audit Complete:\n\n' + data.spelling + '\n' + data.grammar + '\n\nTone Suggestions:\n' + data.tone_suggestions.join('\n');
-                                 alert(text);
-                             }
-                         })
-                         .catch(() => { this.loading = false; alert('Failed to audit grammar.'); });
-                     },
-                     generateImage() {
-                         const prompt = this.aiPrompt || document.getElementById('title').value;
-                         if(!prompt) { alert('Please enter an article title or image prompt first!'); return; }
-                         this.loading = true;
-                         fetch('{{ route('admin.ai.generate-image') }}', {
-                             method: 'POST',
-                             headers: {
-                                 'Content-Type': 'application/json',
-                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                             },
-                             body: JSON.stringify({ prompt: prompt })
-                         })
-                         .then(res => res.json())
-                         .then(data => {
-                             this.loading = false;
-                             if(data.success) {
-                                 alert('AI image generated and registered in Media Library!\nFile: ' + data.fileName + '\n\nNote: If you save changes, please verify the image in your files.');
-                                 const previewContainer = document.getElementById('image-preview-container');
-                                 if (previewContainer) {
-                                     previewContainer.innerHTML = `<img src='${data.url}' class='w-full h-32 object-cover rounded-lg border' />
-                                                                   <input type='hidden' name='generated_image_path' value='${data.path}' />`;
-                                 } else {
-                                     const parent = document.getElementById('featured_image').parentElement;
-                                     const preview = document.createElement('div');
-                                     preview.id = 'image-preview-container';
-                                     preview.className = 'mb-2';
-                                     preview.innerHTML = `<img src='${data.url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
-                                                          <input type='hidden' name='generated_image_path' value='${data.path}' />`;
-                                     parent.insertBefore(preview, parent.firstChild);
-                                 }
-                             }
-                         })
-                         .catch(() => { this.loading = false; alert('Failed to generate image.'); });
-                     },
+                          const titleVal = document.getElementById('title').value;
+                          const excerptVal = document.getElementById('excerpt').value;
+                          const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
+                              ? window.tiptapInstances['content'].getHTML() 
+                              : document.getElementById('content').value;
+                          
+                          const promptVal = this.aiPrompt;
+                          
+                          if (!promptVal && !titleVal && !excerptVal && !contentVal) {
+                              alert('Please enter a Title, Excerpt, Content or AI Prompt first!');
+                              return;
+                          }
+
+                          this.loading = true;
+                          fetch('{{ route('admin.ai.generate-article') }}', {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json',
+                                  'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                              },
+                              body: JSON.stringify({ 
+                                  title: titleVal || promptVal, 
+                                  excerpt: excerptVal, 
+                                  content: contentVal 
+                              })
+                          })
+                          .then(res => res.json())
+                          .then(data => {
+                              this.loading = false;
+                              if(data.success) {
+                                  if (data.title) document.getElementById('title').value = data.title;
+                                  if (data.excerpt) document.getElementById('excerpt').value = data.excerpt;
+                                  if (data.title) document.getElementById('meta_title').value = data.title;
+                                  if (data.seo_description) document.getElementById('meta_description').value = data.seo_description;
+                                  if (data.keywords) document.getElementById('meta_keywords').value = data.keywords;
+                                  
+                                  if (data.content) {
+                                      const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                      if (contentEditor) {
+                                          contentEditor.commands.setContent(data.content);
+                                      } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
+                                          tinymce.get('content').setContent(data.content);
+                                      } else {
+                                          document.getElementById('content').value = data.content;
+                                      }
+                                  }
+
+                                  if (data.faqs && data.faqs.length > 0) {
+                                      const faqContainer = document.getElementById('faq-container');
+                                      if (faqContainer) {
+                                          const rows = faqContainer.querySelectorAll('.faq-row');
+                                          rows.forEach(row => {
+                                              const textarea = row.querySelector('textarea');
+                                              if (textarea && textarea.id && window.tiptapInstances && window.tiptapInstances[textarea.id]) {
+                                                  window.tiptapInstances[textarea.id].destroy();
+                                                  delete window.tiptapInstances[textarea.id];
+                                              }
+                                              row.remove();
+                                          });
+                                          data.faqs.forEach(faq => {
+                                              if (window.addFaqRow) {
+                                                  window.addFaqRow(faq.question, faq.answer);
+                                              }
+                                          });
+                                      }
+                                  }
+
+                                  alert('AI completion successfully finished!');
+                              } else {
+                                  alert(data.message || 'Failed to auto-complete fields.');
+                              }
+                          })
+                          .catch(() => { this.loading = false; alert('Failed to contact AI Assistant.'); });
+                      },
+                      correctGrammar() {
+                          const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
+                              ? window.tiptapInstances['content'].getHTML() 
+                              : document.getElementById('content').value;
+                          if(!contentVal || contentVal.length < 10) { alert('Write some content first to correct grammar!'); return; }
+                          this.loading = true;
+                          fetch('{{ route('admin.ai.correct-grammar') }}', {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json',
+                                  'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                              },
+                              body: JSON.stringify({ content: contentVal })
+                          })
+                          .then(res => res.json())
+                          .then(data => {
+                              this.loading = false;
+                              if(data.success && data.corrected_content) {
+                                  const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                  if (contentEditor) {
+                                      contentEditor.commands.setContent(data.corrected_content);
+                                  } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
+                                      tinymce.get('content').setContent(data.corrected_content);
+                                  } else {
+                                      document.getElementById('content').value = data.corrected_content;
+                                  }
+                                  alert('Spelling and grammar successfully corrected!');
+                              } else {
+                                  alert('Failed to correct spelling and grammar.');
+                              }
+                          })
+                          .catch(() => { this.loading = false; alert('Failed to auto-correct grammar.'); });
+                      },
                      translatePost() {
                          const title = document.getElementById('title').value;
                          const excerpt = document.getElementById('excerpt').value;
-                         const content = tinymce.get('content') ? tinymce.get('content').getContent() : document.getElementById('content').value;
+                         const content = window.tiptapInstances && window.tiptapInstances['content'] 
+                             ? window.tiptapInstances['content'].getHTML() 
+                             : document.getElementById('content').value;
                          const metaTitle = document.getElementById('meta_title').value;
                          const metaDescription = document.getElementById('meta_description').value;
 
@@ -371,7 +394,10 @@
                                  document.getElementById('meta_title').value = data.meta_title;
                                  document.getElementById('meta_description').value = data.meta_description;
                                  
-                                 if (tinymce.get('content')) {
+                                 const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                 if (contentEditor) {
+                                     contentEditor.commands.setContent(data.content);
+                                 } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
                                      tinymce.get('content').setContent(data.content);
                                  } else {
                                      document.getElementById('content').value = data.content;
@@ -401,35 +427,13 @@
                     <div class="grid grid-cols-1 gap-2 pt-1">
                         <button type="button" @click="generateAll()" :disabled="loading"
                                 class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
-                            Generate Article Draft
+                            Generate / Complete Fields & FAQs
                         </button>
                         
-                        <button type="button" @click="generateImage()" :disabled="loading"
-                                class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
-                            Generate Featured Image
-                        </button>
-                        
-                        <button type="button" @click="auditText()" :disabled="loading"
+                        <button type="button" @click="correctGrammar()" :disabled="loading"
                                 class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
-                            Check Spelling & Grammar
+                            Auto-Correct Grammar & Spelling
                         </button>
-                    </div>
-
-                    <div class="border-t border-indigo-100 dark:border-indigo-900 pt-3 space-y-2">
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">AI Auto-Translation</label>
-                        <div class="flex gap-2">
-                            <select x-model="targetLang" class="block w-full rounded-lg border-indigo-200 dark:border-indigo-900 dark:bg-slate-700 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
-                                <option value="en">🇺🇸 English</option>
-                                <option value="fr">🇫🇷 French</option>
-                                <option value="de">🇩🇪 German</option>
-                                <option value="hi">🇮🇳 Hindi</option>
-                                <option value="te">🇮🇳 Telugu</option>
-                            </select>
-                            <button type="button" @click="translatePost()" :disabled="loading"
-                                    class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap">
-                                Translate
-                            </button>
-                        </div>
                     </div>
                 </div>
                 
@@ -443,20 +447,20 @@
             </div>
 
             {{-- Publish Widget --}}
-            <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
+            <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6" x-data="{ status: '{{ old('status', $post->status) }}' }">
                 <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Publish Settings</h3>
 
                 <div>
                     <label for="status" class="block text-sm font-semibold text-gray-700">Status</label>
-                    <select name="status" id="status" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="draft" {{ old('status', $post->status) === 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="published" {{ old('status', $post->status) === 'published' ? 'selected' : '' }}>Published</option>
-                        <option value="scheduled" {{ old('status', $post->status) === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
-                        <option value="archived" {{ old('status', $post->status) === 'archived' ? 'selected' : '' }}>Archived</option>
+                    <select name="status" id="status" x-model="status" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="archived">Archived</option>
                     </select>
                 </div>
 
-                <div>
+                <div x-show="status === 'scheduled'">
                     <label for="published_at" class="block text-sm font-semibold text-gray-700">Publish Date / Time</label>
                     <input type="datetime-local" name="published_at" id="published_at" value="{{ old('published_at', $post->published_at?->format('Y-m-d\TH:i')) }}"
                            class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -498,16 +502,7 @@
                     </select>
                 </div>
 
-                <div>
-                    <label for="locale" class="block text-sm font-semibold text-gray-700">Language (Locale)</label>
-                    <select name="locale" id="locale" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="en" {{ old('locale', $post->locale) === 'en' ? 'selected' : '' }}>🇺🇸 English</option>
-                        <option value="fr" {{ old('locale', $post->locale) === 'fr' ? 'selected' : '' }}>🇫🇷 French</option>
-                        <option value="de" {{ old('locale', $post->locale) === 'de' ? 'selected' : '' }}>🇩🇪 Deutsch</option>
-                        <option value="hi" {{ old('locale', $post->locale) === 'hi' ? 'selected' : '' }}>🇮🇳 हिन्दी</option>
-                        <option value="te" {{ old('locale', $post->locale) === 'te' ? 'selected' : '' }}>🇮🇳 తెలుగు</option>
-                    </select>
-                </div>
+                <input type="hidden" name="locale" id="locale" value="{{ old('locale', $post->locale) }}">
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700">Tags</label>
@@ -677,6 +672,10 @@
 @push('scripts')
 @include('admin.partials.tiptap')
 <script>
+    if (window.initializeImageRegistry) {
+        window.initializeImageRegistry(@json($post->image_metadata ?? (object)[]));
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize main body editor
         initEditor('#content', 500);
@@ -700,7 +699,7 @@
             initEditor(`#${textarea.id}`, 250);
         });
 
-        addFaqBtn.addEventListener('click', function() {
+        window.addFaqRow = function(questionText = '', answerText = '') {
             const row = document.createElement('div');
             row.className = 'faq-row bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 relative space-y-3';
             row.dataset.index = faqIndex;
@@ -710,19 +709,30 @@
                 </button>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Question</label>
-                    <input type="text" name="faqs[${faqIndex}][question]" required
+                    <input type="text" name="faqs[${faqIndex}][question]" value="${questionText.replace(/"/g, '&quot;')}" required
                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Answer (Rich Text)</label>
                     <textarea id="faq-answer-${faqIndex}" name="faqs[${faqIndex}][answer]" rows="3"
-                              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">${answerText}</textarea>
                 </div>
             `;
             faqContainer.appendChild(row);
             initEditor(`#faq-answer-${faqIndex}`, 250);
+            
+            // Set content in Tiptap instance if successfully loaded
+            const instId = `faq-answer-${faqIndex}`;
+            if (window.tiptapInstances && window.tiptapInstances[instId] && answerText) {
+                window.tiptapInstances[instId].commands.setContent(answerText);
+            }
+            
             faqIndex++;
             toggleEmptyState();
+        };
+
+        addFaqBtn.addEventListener('click', function() {
+            window.addFaqRow('', '');
         });
 
         faqContainer.addEventListener('click', function(e) {
@@ -730,20 +740,29 @@
             if (removeBtn) {
                 const row = removeBtn.closest('.faq-row');
                 const textarea = row.querySelector('textarea');
-                if (textarea && textarea.id && tinymce.get(textarea.id)) {
-                    tinymce.get(textarea.id).remove();
+                if (textarea && textarea.id) {
+                    if (window.tiptapInstances && window.tiptapInstances[textarea.id]) {
+                        window.tiptapInstances[textarea.id].destroy();
+                        delete window.tiptapInstances[textarea.id];
+                    } else if (typeof tinymce !== 'undefined' && tinymce.get(textarea.id)) {
+                        tinymce.get(textarea.id).remove();
+                    }
                 }
                 row.remove();
                 toggleEmptyState();
             }
         });
 
-        // Ensure TinyMCE contents are saved into their respective textareas before form submit
+        // Ensure Tiptap / TinyMCE contents are saved into their respective textareas before form submit
         const form = document.querySelector('form[action*="posts"]');
         if (form) {
             form.addEventListener('submit', function() {
                 if (typeof tinymce !== 'undefined') {
                     tinymce.triggerSave();
+                }
+                const imageMetadataInput = document.getElementById('image_metadata_input');
+                if (imageMetadataInput) {
+                    imageMetadataInput.value = JSON.stringify(window.uploadedImagesMap || {});
                 }
             });
         }
@@ -796,6 +815,10 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                if (window.registerAndLogImageFile) {
+                    window.registerAndLogImageFile(file);
+                }
+
                 const formData = new FormData();
                 formData.append('file', file);
 
@@ -814,7 +837,12 @@
                 .then(data => {
                     this.fetchImages();
                     if (this.currentCallback) {
-                        this.currentCallback(data.location, { alt: file.name, path: data.path });
+                        this.currentCallback(data.location, { 
+                            alt: file.name, 
+                            path: data.path,
+                            mime_type: data.mime_type,
+                            file_size: data.file_size
+                        });
                         this.close();
                     }
                 })
@@ -826,7 +854,12 @@
 
             selectImage(img) {
                 if (this.currentCallback) {
-                    this.currentCallback(img.url, { alt: img.file_name, path: img.file_path });
+                    this.currentCallback(img.url, { 
+                        alt: img.file_name, 
+                        path: img.file_path,
+                        mime_type: img.mime_type,
+                        file_size: img.file_size
+                    });
                 }
                 this.close();
             }
@@ -836,17 +869,28 @@
     function selectFeaturedImage() {
         if (window.openMediaPicker) {
             window.openMediaPicker(function(url, meta) {
+                if (window.registerAndLogImageDetails) {
+                    window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
+                }
                 const previewContainer = document.getElementById('image-preview-container');
+                const html = `
+                    <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm max-h-40 bg-gray-50 flex items-center justify-center">
+                        <img src="${url}" class="w-full h-32 object-cover" />
+                        <input type="hidden" name="generated_image_path" value="${meta.path}" />
+                        <button type="button" onclick="clearMediaLibrarySelection()" class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Selection">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>`;
                 if (previewContainer) {
-                    previewContainer.innerHTML = `<img src='${url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
-                                                  <input type='hidden' name='generated_image_path' value='${meta.path}' />`;
+                    previewContainer.innerHTML = html;
                 } else {
                     const parent = document.getElementById('featured_image').parentElement;
                     const preview = document.createElement('div');
                     preview.id = 'image-preview-container';
                     preview.className = 'mb-2';
-                    preview.innerHTML = `<img src='${url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
-                                         <input type='hidden' name='generated_image_path' value='${meta.path}' />`;
+                    preview.innerHTML = html;
                     parent.insertBefore(preview, parent.firstChild);
                 }
             });

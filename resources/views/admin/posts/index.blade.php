@@ -16,27 +16,35 @@
     </div>
 
     {{-- Filter Panel --}}
-    <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-5 flex flex-wrap gap-4 items-center justify-between">
-        <form method="GET" action="{{ route('admin.posts.index') }}" class="flex flex-wrap gap-3 items-center w-full lg:w-auto">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title..."
-                   class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64">
+    <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-5">
+        <form method="GET" action="{{ route('admin.posts.index') }}" class="flex flex-row gap-4 items-center justify-between w-full">
+            <div class="flex-1">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title..."
+                       class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full">
+            </div>
 
-            <select name="status" class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">All Statuses</option>
-                <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Published</option>
-                <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
-                <option value="archived" {{ request('status') === 'archived' ? 'selected' : '' }}>Archived</option>
-            </select>
+            <div class="flex items-center gap-3 justify-end flex-shrink-0">
+                @if(request()->anyFilled(['search', 'status']))
+                    <a href="{{ route('admin.posts.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold whitespace-nowrap mr-2">
+                        Clear Filters
+                    </a>
+                @endif
 
-            <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-colors">
-                Filter
-            </button>
-            @if(request()->anyFilled(['search', 'status']))
-                <a href="{{ route('admin.posts.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
-                    Clear Filters
-                </a>
-            @endif
+                <select name="status" class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                    <option value="">All Status</option>
+                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Published</option>
+                    <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
+                    <option value="archived" {{ request('status') === 'archived' ? 'selected' : '' }}>Archived</option>
+                </select>
+
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-colors whitespace-nowrap cursor-pointer">
+                    <svg class="w-4 h-4 text-gray-650" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z"/>
+                    </svg>
+                    Apply Filter
+                </button>
+            </div>
         </form>
     </div>
 

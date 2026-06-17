@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Alpine.js cloak support - hides elements until Alpine initializes */
+[x-cloak] { display: none !important; }
+
+/* Menu Builder: hide add-buttons by default, show only when a checkbox is checked */
+#pages-panel .add-pages-btn {
+    display: none;
+}
+#pages-panel:has(.page-checkbox:checked) .add-pages-btn {
+    display: block;
+}
+
+#categories-panel .add-categories-btn {
+    display: none;
+}
+#categories-panel:has(.category-checkbox:checked) .add-categories-btn {
+    display: block;
+}
+
+
 @layer base {
     /* Main Background & Text */
     .dark body {
@@ -259,3 +278,63 @@
     border-color: #334155 !important;
     color: #94a3b8 !important;
 }
+
+/* Premium Standalone CTA Button Styles */
+.prose .cta-button,
+.cta-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff !important;
+    text-decoration: none !important;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
+    margin: 1rem 0;
+    letter-spacing: 0.025em;
+}
+
+.prose .cta-button:hover,
+.cta-button:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.6);
+    text-decoration: none !important;
+}
+
+.prose .cta-button:active,
+.cta-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px 0 rgba(99, 102, 241, 0.4);
+}
+
+/* Dark mode overrides for CTA Button */
+.dark .prose .cta-button,
+.dark .cta-button {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.3);
+}
+
+.dark .prose .cta-button:hover,
+.dark .cta-button:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.5);
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+}
+
+

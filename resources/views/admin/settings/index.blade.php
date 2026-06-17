@@ -4,7 +4,7 @@
 @section('header', 'System Settings')
 
 @section('content')
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="w-full space-y-6">
     <div>
         <h2 class="text-xl font-bold text-gray-800">System Configuration</h2>
         <p class="text-sm text-gray-500 mt-1">Configure global variables, social links, SEO defaults, Google Analytics, and theme layout.</p>
@@ -269,7 +269,25 @@
                 <div>
                     <label for="global_cta_button_link" class="block text-sm font-semibold text-gray-700">CTA Button Link</label>
                     <input type="text" name="global_cta_button_link" id="global_cta_button_link" value="{{ old('global_cta_button_link', $settings->global_cta_button_link) }}" placeholder="e.g. /search"
-                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+        {{-- Section 7: AI Assistant Configurations --}}
+        <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
+            <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                 🤖 AI Assistant Configurations
+            </h3>
+            <p class="text-xs text-gray-400">Configure how the built-in AI Copilot generates content for posts and pages. You can edit the system instructions, tone, and HTML formatting constraints here.</p>
+            
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <label for="ai_system_instruction" class="block text-sm font-semibold text-gray-700">AI System Instructions / Role Definition</label>
+                    <textarea name="ai_system_instruction" id="ai_system_instruction" rows="6" placeholder="Instructions for the AI assistant..."
+                              class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-xs">{{ old('ai_system_instruction', $settings->ai_system_instruction) }}</textarea>
+                    <p class="text-xs text-gray-450 mt-1.5 leading-relaxed">
+                        <strong>Tips:</strong> You can dictate details such as output language constraints, desired style, specific keyword mentions, word-count limits, or additional structural rules. This instruction is pre-pended to the prompt sent to Gemini.
+                    </p>
                 </div>
             </div>
         </div>
@@ -280,5 +298,44 @@
             </button>
         </div>
     </form>
+
+    {{-- Danger Zone: Reset Analytics --}}
+    <div class="bg-red-50/20 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/50 shadow-sm p-6 space-y-4">
+        <h3 class="text-md font-bold text-red-650 dark:text-red-400 border-b border-red-100 dark:border-red-900/30 pb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            Danger Zone
+        </h3>
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Reset Website Analytics & Post Views</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xl">
+                    This will permanently delete all website visit statistics (views, visits, and visitor logs) and reset all article view counters to zero. This action cannot be undone.
+                </p>
+            </div>
+            
+            <div>
+                <button type="button" onclick="confirmResetAnalytics()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all whitespace-nowrap cursor-pointer">
+                    Reset Analytics
+                </button>
+            </div>
+        </div>
+
+        <form id="reset-analytics-form" action="{{ route('admin.settings.reset-analytics') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+    </div>
 </div>
+
+@push('scripts')
+<script>
+    function confirmResetAnalytics() {
+        if (confirm('Are you absolutely sure you want to reset all analytics? This will delete all visitor logs and reset all article views to zero. This action cannot be undone.')) {
+            document.getElementById('reset-analytics-form').submit();
+        }
+    }
+</script>
+@endpush
 @endsection

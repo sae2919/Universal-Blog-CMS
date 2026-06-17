@@ -67,7 +67,7 @@
         <span class="w-1 h-6 bg-red-500 rounded-full"></span>
         <h2 class="text-xl font-bold text-gray-900">🔥 {{ __('Trending Now') }}</h2>
     </div>
-    <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+    <div id="trending-container" class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         @foreach($trendingPosts as $i => $post)
             <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="group flex-shrink-0 w-64 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 @if($post->featured_image)
@@ -217,3 +217,54 @@
 </section>
 
 @endsection
+
+@push('scripts')
+<script>
+    window.addEventListener('load', () => {
+        const container = document.getElementById('trending-container');
+        if (!container) return;
+
+        // Clone the children to create a seamless infinite loop
+        const originalChildren = Array.from(container.children);
+        if (originalChildren.length === 0) return;
+        
+        originalChildren.forEach(child => {
+            const clone = child.cloneNode(true);
+            container.appendChild(clone);
+        });
+
+        let scrollSpeed = 0.6; // Scroll speed in pixels per frame
+        let isPaused = false;
+        
+        function scrollStep() {
+            if (isPaused) return;
+
+            container.scrollLeft += scrollSpeed;
+
+            // Halfway point (where the clones start)
+            const halfScrollWidth = container.scrollWidth / 2;
+            if (container.scrollLeft >= halfScrollWidth) {
+                container.scrollLeft -= halfScrollWidth;
+            }
+        }
+
+        let animationFrameId;
+        function animate() {
+            scrollStep();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Pause on hover
+        container.addEventListener('mouseenter', () => isPaused = true);
+        container.addEventListener('mouseleave', () => isPaused = false);
+
+        // Pause on touch (for mobile devices)
+        container.addEventListener('touchstart', () => isPaused = true);
+        container.addEventListener('touchend', () => isPaused = false);
+
+        // Start scrolling
+        animate();
+    });
+</script>
+@endpush
+

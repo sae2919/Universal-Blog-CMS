@@ -14,7 +14,7 @@ class Page extends Model
     protected $fillable = [
         'title', 'slug', 'locale', 'content', 'featured_image',
         'meta_title', 'meta_description', 'meta_keywords', 'status',
-        'show_in_header', 'show_in_footer',
+        'show_in_header', 'show_in_footer', 'image_metadata',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class Page extends Model
         return [
             'show_in_header' => 'boolean',
             'show_in_footer' => 'boolean',
+            'image_metadata' => 'array',
         ];
     }
 

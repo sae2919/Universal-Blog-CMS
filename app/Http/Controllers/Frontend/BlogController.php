@@ -56,13 +56,10 @@ class BlogController extends Controller
         });
 
         if ($post) {
-            // Fetch live views directly from database to bypass cache
-            $post->views = \DB::table('posts')->where('id', $post->id)->value('views');
-
             // Calculate read time dynamically
             $post->read_time = $this->postService->calculateReadTime($post);
 
-            // Increment view count asynchronously
+            // Increment view count (updates DB + model immediately, clears listing caches after response)
             $this->postService->incrementViewsAsync($post);
 
             $relatedPosts = Cache::remember("post.related.{$postSlug}.{$locale}", now()->addHours(3), function () use ($post) {
@@ -169,6 +166,13 @@ class BlogController extends Controller
         $validated['ip_address'] = $request->ip();
 
         $comment = Comment::create($validated);
+
+        // Clear cached post content to reflect comment updates immediately
+        Cache::forget("post.{$post->slug}.en");
+        Cache::forget("post.{$post->slug}.fr");
+        Cache::forget("post.{$post->slug}.de");
+        Cache::forget("post.{$post->slug}.hi");
+        Cache::forget("post.{$post->slug}.te");
 
         \App\Models\Notification::create([
             'title' => 'New Comment Awaiting Approval',

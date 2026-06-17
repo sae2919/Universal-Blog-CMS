@@ -65,6 +65,40 @@
         color: #e0e7ff !important;
         border-color: #3730a3 !important;
     }
+
+    /* Standalone CTA Button style in Editor */
+    .ProseMirror a.cta-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #ffffff !important;
+        text-decoration: none !important;
+        border-radius: 9999px;
+        box-shadow: 0 4px 12px 0 rgba(99, 102, 241, 0.3);
+        transition: all 0.2s ease-in-out;
+        border: none;
+        cursor: pointer;
+        margin: 0.5rem 0;
+        letter-spacing: 0.025em;
+    }
+    .ProseMirror a.cta-button:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        color: #ffffff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px 0 rgba(99, 102, 241, 0.4);
+    }
+    .dark .ProseMirror a.cta-button {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        box-shadow: 0 4px 12px 0 rgba(99, 102, 241, 0.2);
+    }
+    .dark .ProseMirror a.cta-button:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        box-shadow: 0 6px 16px 0 rgba(99, 102, 241, 0.3);
+    }
 </style>
 
 {{-- Load Tiptap from Bundled Assets --}}
@@ -89,6 +123,75 @@
         }
 
         const { Editor, Node, mergeAttributes, StarterKit, Underline, Image, Link, Table, TableRow, TableCell, TableHeader, Placeholder, TextAlign, Highlight, Color, TextStyle, BulletList } = window.Tiptap;
+
+        // Custom Font Size extension by extending TextStyle
+        const FontSize = TextStyle.extend({
+            addAttributes() {
+                return {
+                    ...this.parent?.(),
+                    fontSize: {
+                        default: null,
+                        parseHTML: element => element.style.fontSize,
+                        renderHTML: attributes => {
+                            if (!attributes.fontSize) {
+                                return {};
+                            }
+                            return {
+                                style: `font-size: ${attributes.fontSize}`,
+                            };
+                        },
+                    },
+                };
+            },
+            addCommands() {
+                return {
+                    ...this.parent?.(),
+                    setFontSize: fontSize => ({ chain }) => {
+                        return chain()
+                            .setMark('textStyle', { fontSize })
+                            .run();
+                    },
+                    unsetFontSize: () => ({ chain }) => {
+                        return chain()
+                            .setMark('textStyle', { fontSize: null })
+                            .run();
+                    },
+                };
+            },
+        });
+
+        // Custom CTA Button Node
+        const CtaButton = Node.create({
+            name: 'ctaButton',
+            group: 'inline',
+            inline: true,
+            content: 'text*',
+            atom: false,
+            addAttributes() {
+                return {
+                    href: {
+                        default: '#',
+                        parseHTML: element => element.getAttribute('href'),
+                        renderHTML: attributes => ({ href: attributes.href })
+                    },
+                    target: {
+                        default: '_blank',
+                        parseHTML: element => element.getAttribute('target') || '_blank',
+                        renderHTML: attributes => ({ target: attributes.target })
+                    }
+                };
+            },
+            parseHTML() {
+                return [{
+                    tag: 'a.cta-button',
+                }];
+            },
+            renderHTML({ HTMLAttributes }) {
+                return ['a', mergeAttributes(HTMLAttributes, {
+                    class: 'cta-button'
+                }), 0];
+            }
+        });
 
         // Custom BulletList Node to support bullet classes (disc, circle, square, none)
         const CustomBulletList = BulletList.extend({
@@ -170,6 +273,46 @@
                 <button type="button" data-cmd="strike" class="p-1.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-100 transition-colors" title="Strikethrough">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-7-6a4 4 0 018 0v1H7V6zm0 11v-1h10v1a4 4 0 01-8 0z"/></svg>
                 </button>
+
+                <span class="w-px h-5 bg-gray-200 dark:bg-slate-800 mx-1"></span>
+
+                <!-- Font Size Dropdown -->
+                <div class="relative dropdown-container">
+                    <button type="button" data-dropdown-toggle="fontsize-menu-${id}" class="px-2 py-1 border border-gray-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer" title="Font Size">
+                        <span id="fontsize-preview-${id}">16px</span>
+                        <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="fontsize-menu-${id}" class="absolute left-0 mt-1 w-32 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 py-1 hidden max-h-56 overflow-y-auto">
+                        <button type="button" data-fontsize="12px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-[10px] text-gray-400 w-4">12</span> 12px (Small)
+                        </button>
+                        <button type="button" data-fontsize="14px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-4">14</span> 14px (Normal)
+                        </button>
+                        <button type="button" data-fontsize="16px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-sm text-gray-400 w-4">16</span> 16px (Medium)
+                        </button>
+                        <button type="button" data-fontsize="18px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-base text-gray-400 w-4">18</span> 18px (Large)
+                        </button>
+                        <button type="button" data-fontsize="20px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-lg text-gray-400 w-4">20</span> 20px (XL)
+                        </button>
+                        <button type="button" data-fontsize="24px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-xl text-gray-400 w-4">24</span> 24px (2XL)
+                        </button>
+                        <button type="button" data-fontsize="30px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-2xl text-gray-400 w-4">30</span> 30px (3XL)
+                        </button>
+                        <button type="button" data-fontsize="36px" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
+                            <span class="text-3xl text-gray-400 w-4">36</span> 36px (4XL)
+                        </button>
+                        <div class="border-t border-gray-100 dark:border-slate-700 my-1"></div>
+                        <button type="button" data-fontsize-clear class="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2">
+                            <span class="w-4">✕</span> Clear Size
+                        </button>
+                    </div>
+                </div>
 
                 <span class="w-px h-5 bg-gray-200 dark:bg-slate-800 mx-1"></span>
 
@@ -289,15 +432,15 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div id="image-menu-${id}" class="absolute left-0 mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 py-1 hidden">
-                        <button type="button" data-tiptap-action="gallery-image" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
-                            <span>🖼️</span> Media Gallery
-                        </button>
+                    <div id="image-menu-${id}" class="absolute left-0 mt-1 w-44 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 py-1 hidden">
                         <button type="button" data-tiptap-action="upload-image" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
                             <span>📤</span> Upload Local File
                         </button>
                         <button type="button" data-cmd="insertSlider" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2 border-t border-gray-100 dark:border-slate-700">
                             <span>🎠</span> Image Slider
+                        </button>
+                        <button type="button" data-tiptap-action="remove-image" class="w-full text-left px-3 py-1.5 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 border-t border-gray-100 dark:border-slate-700">
+                            <span>🗑️</span> Remove Selected Image
                         </button>
                     </div>
                 </div>
@@ -332,6 +475,9 @@
                 <button type="button" data-cmd="insertCTA" class="px-2 py-1 border border-emerald-200 dark:border-emerald-900 rounded bg-emerald-50/50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer" title="Insert Call-To-Action (CTA) Box">
                     <span>📢 CTA</span>
                 </button>
+                <button type="button" data-cmd="insertCTAButton" class="px-2 py-1 border border-indigo-200 dark:border-indigo-900 rounded bg-indigo-50/50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer" title="Insert standalone CTA Button">
+                    <span>🔘 CTA Button</span>
+                </button>
 
                 <!-- Layout Blocks -->
                 <div class="relative dropdown-container">
@@ -351,6 +497,9 @@
                         </button>
                         <button type="button" data-cmd="insertCTA" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2 border-t border-gray-100 dark:border-slate-700">
                             <span>📢</span> Insert Post CTA
+                        </button>
+                        <button type="button" data-cmd="insertCTAButton" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2 border-t border-gray-100 dark:border-slate-700">
+                            <span>🔘</span> Insert CTA Button
                         </button>
                     </div>
                 </div>
@@ -391,16 +540,16 @@
                 element: editorElement,
                 extensions: [
                     StarterKit.configure({
-                        bulletList: false // Disable to use custom extended bulletList
-                    }),
-                    Underline,
-                    Link.configure({
-                        openOnClick: false,
-                        HTMLAttributes: {
-                            class: 'text-indigo-600 dark:text-indigo-400 hover:underline',
-                            target: '_blank',
-                            rel: 'noopener noreferrer'
-                        }
+                        bulletList: false, // Disable to use custom extended bulletList
+                        link: {
+                            openOnClick: false,
+                            HTMLAttributes: {
+                                class: 'text-indigo-600 dark:text-indigo-400 hover:underline',
+                                target: '_blank',
+                                rel: 'noopener noreferrer'
+                            }
+                        },
+                        underline: {}
                     }),
                     Image.configure({
                         HTMLAttributes: {
@@ -433,10 +582,11 @@
                     Highlight.configure({
                         multicolor: true
                     }),
-                    TextStyle,
+                    FontSize,
                     Color,
                     CustomBulletList,
-                    DivNode
+                    DivNode,
+                    CtaButton
                 ],
                 content: textarea.value || '',
                 onUpdate({ editor }) {
@@ -462,6 +612,40 @@
                 },
                 onBlur() {
                     container.classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+                },
+                editorProps: {
+                    handleDrop(view, event, slice, moved) {
+                        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+                            const files = Array.from(event.dataTransfer.files);
+                            const images = files.filter(file => file.type.startsWith('image/'));
+                            if (images.length > 0) {
+                                event.preventDefault();
+                                const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+                                const pos = coordinates ? coordinates.pos : view.state.selection.from;
+                                images.forEach(file => {
+                                    window.registerAndLogImageFile(file);
+                                    uploadImageAndInsert(view, file, pos);
+                                });
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    handlePaste(view, event) {
+                        if (event.clipboardData && event.clipboardData.files && event.clipboardData.files.length) {
+                            const files = Array.from(event.clipboardData.files);
+                            const images = files.filter(file => file.type.startsWith('image/'));
+                            if (images.length > 0) {
+                                event.preventDefault();
+                                images.forEach(file => {
+                                    window.registerAndLogImageFile(file);
+                                    uploadImageAndInsert(view, file, view.state.selection.from);
+                                });
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
                 }
             });
         } catch (e) {
@@ -476,9 +660,122 @@
         // Store instance in the global registry
         window.tiptapInstances[id] = editor;
 
+        // Create or find image delete overlay button
+        const wrapper = container.querySelector('.tiptap-content-wrapper');
+        let deleteBtn = container.querySelector('.tiptap-image-delete-btn');
+        if (!deleteBtn) {
+            deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'tiptap-image-delete-btn absolute bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all z-40 hidden duration-200 ease-out active:scale-95';
+            deleteBtn.innerHTML = `
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Remove Image
+            `;
+            wrapper.appendChild(deleteBtn);
+        }
+
+        let activeImage = null;
+
+        function positionDeleteButton(img) {
+            if (!img || !deleteBtn) return;
+            const imgRect = img.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+            
+            const top = imgRect.top - wrapperRect.top + wrapper.scrollTop + 8;
+            const left = imgRect.left - wrapperRect.left + wrapper.scrollLeft + imgRect.width - deleteBtn.offsetWidth - 8;
+            
+            deleteBtn.style.top = `${top}px`;
+            deleteBtn.style.left = `${left}px`;
+            deleteBtn.classList.remove('hidden');
+        }
+
+        function hideDeleteButton() {
+            if (deleteBtn) {
+                deleteBtn.classList.add('hidden');
+            }
+            activeImage = null;
+        }
+
+        function uploadImageAndInsert(view, file, pos) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-5 right-5 bg-indigo-650 text-white px-4 py-2 rounded-lg shadow-lg text-xs z-[9999] flex items-center gap-2 animate-bounce';
+            notification.innerHTML = '<span>⏳</span> Uploading image...';
+            document.body.appendChild(notification);
+
+            fetch('{{ route('admin.media.json-upload', [], false) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(res => {
+                notification.remove();
+                if (!res.ok) throw new Error('Network error during upload');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.location) {
+                    const node = view.state.schema.nodes.image.create({ src: data.location, alt: file.name });
+                    const transaction = view.state.tr.insert(pos, node);
+                    view.dispatch(transaction);
+                } else {
+                    alert('Invalid response from server.');
+                }
+            })
+            .catch(err => {
+                notification.remove();
+                alert('Upload failed: ' + err.message);
+            });
+        }
+
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeImage && editor) {
+                const pos = editor.view.posAtDOM(activeImage, 0);
+                if (pos !== undefined) {
+                    editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                }
+                hideDeleteButton();
+            }
+        });
+
+        wrapper.addEventListener('scroll', () => {
+            if (activeImage) {
+                positionDeleteButton(activeImage);
+            }
+        });
+
+        editor.on('blur', () => {
+            setTimeout(() => {
+                if (document.activeElement !== deleteBtn && !deleteBtn.contains(document.activeElement)) {
+                    hideDeleteButton();
+                }
+            }, 150);
+        });
+
+        editor.on('update', () => {
+            hideDeleteButton();
+        });
+
         // Auto-focus editor when clicking anywhere on the content area
         editorElement.addEventListener('click', (e) => {
             if (codeViewActive) return;
+            const img = e.target.closest('img');
+            if (img && editorElement.contains(img)) {
+                activeImage = img;
+                setTimeout(() => {
+                    positionDeleteButton(img);
+                }, 10);
+            } else {
+                if (!e.target.closest('.tiptap-image-delete-btn')) {
+                    hideDeleteButton();
+                }
+            }
             if (e.target === editorElement || e.target.classList.contains('ProseMirror')) {
                 editor.commands.focus();
             }
@@ -486,7 +783,7 @@
 
         // Dropdown toggle logic
         const dropdownToggles = container.querySelectorAll('[data-dropdown-toggle]');
-        const dropdownMenus = container.querySelectorAll('[id^="image-menu-"], [id^="table-menu-"], [id^="blocks-menu-"], [id^="color-menu-"], [id^="highlight-menu-"], [id^="bullet-style-menu-"]');
+        const dropdownMenus = container.querySelectorAll('[id^="image-menu-"], [id^="table-menu-"], [id^="blocks-menu-"], [id^="color-menu-"], [id^="highlight-menu-"], [id^="bullet-style-menu-"], [id^="fontsize-menu-"]');
 
         function closeAllDropdowns() {
             dropdownMenus.forEach(menu => menu.classList.add('hidden'));
@@ -662,6 +959,13 @@
                         '</div><p></p>'
                     ).run();
                 }
+                else if (cmd === 'insertCTAButton') {
+                    const text = window.prompt('Enter Button Text:', 'Click Here');
+                    if (!text) return;
+                    const url = window.prompt('Enter Button URL:', 'https://');
+                    if (!url) return;
+                    editor.chain().focus().insertContent(`<a class="cta-button" href="${url}" target="_blank" rel="noopener noreferrer">${text}</a> `).run();
+                }
 
                 updateToolbarStates(editor, container);
             });
@@ -722,6 +1026,31 @@
             }
         }
 
+        // Font Size dropdown action handlers
+        const fontSizeMenu = container.querySelector(`#fontsize-menu-${id}`);
+        if (fontSizeMenu) {
+            fontSizeMenu.querySelectorAll('[data-fontsize]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (codeViewActive) return;
+                    const size = btn.getAttribute('data-fontsize');
+                    editor.chain().focus().setFontSize(size).run();
+                    closeAllDropdowns();
+                    updateToolbarStates(editor, container);
+                });
+            });
+            const fontSizeClear = fontSizeMenu.querySelector('[data-fontsize-clear]');
+            if (fontSizeClear) {
+                fontSizeClear.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (codeViewActive) return;
+                    editor.chain().focus().unsetFontSize().run();
+                    closeAllDropdowns();
+                    updateToolbarStates(editor, container);
+                });
+            }
+        }
+
         // Highlight Picker actions
         const highlightMenu = container.querySelector(`#highlight-menu-${id}`);
         if (highlightMenu) {
@@ -766,6 +1095,9 @@
                 closeAllDropdowns();
                 if (window.openMediaPicker) {
                     window.openMediaPicker(function(url, meta) {
+                        if (window.registerAndLogImageDetails) {
+                            window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
+                        }
                         editor.chain().focus().setImage({ src: url, alt: meta.alt || '' }).run();
                     });
                 } else {
@@ -783,18 +1115,43 @@
             });
         }
 
+        const removeImageBtn = container.querySelector('[data-tiptap-action="remove-image"]');
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (codeViewActive) return;
+                closeAllDropdowns();
+                
+                if (activeImage && editor) {
+                    const pos = editor.view.posAtDOM(activeImage, 0);
+                    if (pos !== undefined) {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                    }
+                    hideDeleteButton();
+                } else if (editor && editor.state.selection.node && editor.state.selection.node.type.name === 'image') {
+                    editor.chain().focus().deleteSelection().run();
+                } else {
+                    alert('Please select or click an image inside the editor to remove it.');
+                }
+            });
+        }
+
         // Asynchronous image uploader
         fileInput.addEventListener('change', (e) => {
             if (codeViewActive) return;
             const file = e.target.files[0];
             if (!file) return;
 
+            if (window.registerAndLogImageFile) {
+                window.registerAndLogImageFile(file);
+            }
+
             const formData = new FormData();
             formData.append('file', file);
 
             // Temporarily insert a uploading placeholder or show a prompt
             const notification = document.createElement('div');
-            notification.className = 'fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-xs z-[9999] flex items-center gap-2 animate-bounce';
+            notification.className = 'fixed bottom-5 right-5 bg-indigo-650 text-white px-4 py-2 rounded-lg shadow-lg text-xs z-[9999] flex items-center gap-2 animate-bounce';
             notification.innerHTML = '<span>⏳</span> Uploading image...';
             document.body.appendChild(notification);
 
@@ -875,6 +1232,14 @@
 
         // Update Text Color indicator preview
         const id = container.id.replace('tiptap-container-', '');
+
+        // Update Font Size indicator preview
+        const fontSizePreview = container.querySelector(`#fontsize-preview-${id}`);
+        if (fontSizePreview) {
+            const currentFontSize = editor.getAttributes('textStyle').fontSize || '16px';
+            fontSizePreview.innerText = currentFontSize;
+        }
+
         const colorPreview = container.querySelector(`#color-preview-${id}`);
         if (colorPreview) {
             const currentColor = editor.getAttributes('textStyle').color || '#000000';

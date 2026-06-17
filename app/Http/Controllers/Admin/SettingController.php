@@ -44,6 +44,7 @@ class SettingController extends Controller
             'global_cta_button_text'  => 'nullable|string|max:255',
             'global_cta_button_link'  => 'nullable|string|max:255',
             'global_cta_bg_image'     => 'nullable|image|max:2048',
+            'ai_system_instruction'   => 'nullable|string|max:5000',
         ]);
 
         if ($request->hasFile('site_logo')) {
@@ -65,5 +66,20 @@ class SettingController extends Controller
         Setting::clearCache();
 
         return redirect()->route('admin.settings.index')->with('success', 'Settings saved!');
+    }
+
+    public function resetAnalytics()
+    {
+        // Delete all visit logs
+        \App\Models\Visit::query()->delete();
+
+        // Reset views count on all posts
+        \App\Models\Post::query()->update(['views' => 0]);
+
+        // Flush application cache to clear sidebar popular lists immediately
+        \Illuminate\Support\Facades\Cache::flush();
+
+        return redirect()->route('admin.settings.index')
+            ->with('success', 'Analytics dashboard data has been reset to zero!');
     }
 }

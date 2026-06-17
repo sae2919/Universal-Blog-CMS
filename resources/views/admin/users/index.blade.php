@@ -16,27 +16,32 @@
     </div>
 
     {{-- Filter Panel --}}
-    <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-5 flex flex-wrap gap-4 items-center justify-between">
-        <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap gap-3 items-center w-full lg:w-auto">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or email..."
-                   class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64">
+    <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-5">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-row gap-4 items-center justify-between w-full">
+            <div class="flex-1">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or email..."
+                       class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full">
+            </div>
 
-            <select name="role" class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">All Roles</option>
-                <option value="super_admin" {{ request('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-                <option value="editor" {{ request('role') === 'editor' ? 'selected' : '' }}>Editor</option>
-                <option value="author" {{ request('role') === 'author' ? 'selected' : '' }}>Author</option>
-            </select>
+            <div class="flex items-center gap-3 justify-end flex-shrink-0">
+                @if(request()->anyFilled(['search', 'role']))
+                    <a href="{{ route('admin.users.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold whitespace-nowrap mr-2">
+                        Clear Filters
+                    </a>
+                @endif
 
-            <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-colors">
-                Filter
-            </button>
-            @if(request()->anyFilled(['search', 'role']))
-                <a href="{{ route('admin.users.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
-                    Clear Filters
-                </a>
-            @endif
+                <select name="role" class="px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                    <option value="">All Roles</option>
+                    <option value="super_admin" {{ request('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="editor" {{ request('role') === 'editor' ? 'selected' : '' }}>Editor</option>
+                    <option value="author" {{ request('role') === 'author' ? 'selected' : '' }}>Author</option>
+                </select>
+
+                <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-colors whitespace-nowrap">
+                    Filter
+                </button>
+            </div>
         </form>
     </div>
 

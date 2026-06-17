@@ -5,27 +5,35 @@
 @section('meta_keywords', $page->meta_keywords)
 
 @section('content')
-<article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    {{-- Header --}}
-    <header class="text-center space-y-4 mb-10">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
+<!-- Page Header Banner -->
+<div class="relative py-16 px-4 sm:px-6 lg:px-8 text-center bg-gray-50 dark:bg-slate-900 border-b border-gray-150 dark:border-slate-800/80">
+    <div class="max-w-4xl mx-auto space-y-4">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
             {{ $page->title }}
         </h1>
-        <div class="w-16 h-1 bg-indigo-600 mx-auto rounded-full"></div>
-    </header>
-
-    {{-- Featured Image --}}
-    @if($page->featured_image)
-        <div class="mb-12 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
-            <img src="{{ asset('storage/' . $page->featured_image) }}" class="w-full h-[380px] object-cover" alt="{{ $page->title }}">
-        </div>
-    @endif
-
-    {{-- Main Rich Content --}}
-    <div class="prose prose-indigo prose-lg max-w-none text-gray-700 leading-relaxed">
-        {!! preg_replace('/(\.\.\/)+storage\//', '/storage/', $page->content) !!}
+        <div class="w-16 h-1.5 mx-auto rounded-full bg-indigo-600 dark:bg-indigo-400"></div>
     </div>
-</article>
+</div>
+
+<!-- Main Content Area -->
+<div class="min-h-screen bg-white dark:bg-slate-950 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {{-- Featured Image --}}
+        @if($page->featured_image)
+            <div class="mb-12 rounded-3xl overflow-hidden shadow-md border border-gray-150 dark:border-slate-800">
+                <img src="{{ asset('storage/' . $page->featured_image) }}" class="w-full h-auto max-h-[500px] object-cover" alt="{{ $page->title }}">
+            </div>
+        @endif
+
+        {{-- Main Rich Content --}}
+        <div class="prose prose-indigo prose-lg max-w-none dark:prose-invert text-gray-650 dark:text-slate-350 leading-relaxed 
+                    prose-headings:text-indigo-950 dark:prose-headings:text-white prose-headings:font-extrabold
+                    prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-3 prose-h2:border-b prose-h2:border-gray-150 dark:prose-h2:border-slate-800
+                    prose-p:mb-6 prose-li:mb-2 prose-ul:list-disc prose-ul:pl-6">
+            {!! preg_replace('/(\.\.\/)+storage\//', '/storage/', $page->content) !!}
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')

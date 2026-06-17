@@ -128,14 +128,7 @@
                 Navigation Menus
             </a>
 
-            <a href="{{ route('admin.media.index') }}"
-               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-                      {{ request()->routeIs('admin.media.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                Media Library
-            </a>
+
 
             <a href="{{ route('admin.seo.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
@@ -144,27 +137,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 SEO Diagnostics
-            </a>
-
-            <a href="{{ route('admin.settings.index') }}"
-               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-                      {{ request()->routeIs('admin.settings.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Settings
-            </a>
-
-            <a href="{{ route('admin.trash.index') }}"
-               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-                      {{ request()->routeIs('admin.trash.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-                Trash
             </a>
 
             <a href="{{ route('admin.notifications.index') }}"
@@ -184,15 +156,28 @@
                 @endif
             </a>
 
-            <a href="{{ route('admin.ai.dashboard') }}"
+            <a href="{{ route('admin.trash.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-                      {{ request()->routeIs('admin.ai.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                      {{ request()->routeIs('admin.trash.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
-                <span>AI Assistant</span>
+                Trash
             </a>
+
+            <a href="{{ route('admin.settings.index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                      {{ request()->routeIs('admin.settings.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Settings
+            </a>
+
+
 
 
             {{-- Divider --}}
@@ -238,36 +223,6 @@
         <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
             <h1 class="text-lg font-semibold text-gray-800">@yield('header', 'Dashboard')</h1>
             <div class="flex items-center gap-4">
-                {{-- Language Switcher --}}
-                <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" @click.outside="open = false" 
-                            class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-                        @if(app()->getLocale() === 'en')
-                            🇺🇸 EN
-                        @elseif(app()->getLocale() === 'fr')
-                            🇫🇷 FR
-                        @elseif(app()->getLocale() === 'de')
-                            🇩🇪 DE
-                        @elseif(app()->getLocale() === 'hi')
-                            🇮🇳 HI
-                        @elseif(app()->getLocale() === 'te')
-                            🇮🇳 TE
-                        @endif
-                        <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div x-show="open" x-transition 
-                         class="absolute right-0 top-full mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-150 py-1 z-55 overflow-hidden"
-                         style="display: none;">
-                        <a href="?lang=en" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇺🇸 English</a>
-                        <a href="?lang=fr" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇫🇷 Français</a>
-                        <a href="?lang=de" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇩🇪 Deutsch</a>
-                        <a href="?lang=hi" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇮🇳 हिन्दी</a>
-                        <a href="?lang=te" class="block px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-650 transition-colors">🇮🇳 తెలుగు</a>
-                    </div>
-                </div>
-
                 {{-- Notifications Dropdown --}}
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="p-2 rounded-lg text-gray-500 hover:text-indigo-650 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer" title="Notifications">
@@ -391,6 +346,102 @@
         </main>
     </div>
 </div>
+
+<script>
+    // Centralized Image Registry and Logging
+    window.uploadedImagesMap = window.uploadedImagesMap || {};
+    let globalImageCounter = 1;
+
+    window.initializeImageRegistry = function(existingData) {
+        if (existingData && typeof existingData === 'object') {
+            window.uploadedImagesMap = { ...window.uploadedImagesMap, ...existingData };
+            console.log('Image registry initialized with:', window.uploadedImagesMap);
+        }
+    };
+
+    window.registerAndLogImageFile = function(file) {
+        if (!file) return null;
+        const id = 'img_' + Date.now() + '_' + globalImageCounter++;
+        const info = {
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size
+        };
+        window.uploadedImagesMap[id] = info;
+        console.log(`images[${id}]`, info);
+        return id;
+    };
+
+    window.registerAndLogImageDetails = function(fileName, fileType, fileSize) {
+        const id = 'img_' + Date.now() + '_' + globalImageCounter++;
+        const info = {
+            fileName: fileName,
+            fileType: fileType || 'image/jpeg',
+            fileSize: fileSize || 0
+        };
+        window.uploadedImagesMap[id] = info;
+        console.log(`images[${id}]`, info);
+        return id;
+    };
+
+    document.addEventListener('change', function(e) {
+        const input = e.target;
+        if (input.type === 'file' && input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.type.startsWith('image/')) {
+                // Register and log the file choice globally
+                window.registerAndLogImageFile(file);
+
+                let containerId = input.id + '-selected-preview-container';
+                let previewContainer = document.getElementById(containerId);
+
+                if (!previewContainer) {
+                    previewContainer = document.createElement('div');
+                    previewContainer.id = containerId;
+                    previewContainer.className = 'mt-2 mb-2 relative max-w-sm';
+                    input.parentNode.insertBefore(previewContainer, input);
+                }
+                
+                const objectUrl = URL.createObjectURL(file);
+                previewContainer.innerHTML = `
+                    <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm max-h-40 bg-gray-50 flex items-center justify-center">
+                        <img src="${objectUrl}" class="w-full h-32 object-cover" />
+                        <button type="button" onclick="clearSelectedFileInput('${input.id}', '${containerId}')" class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Selected File">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                input.addEventListener('change', () => URL.revokeObjectURL(objectUrl), { once: true });
+            }
+        }
+    });
+
+    window.clearSelectedFileInput = function(inputId, containerId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.remove();
+        }
+    };
+    
+    window.clearMediaLibrarySelection = function() {
+        const previewContainer = document.getElementById('image-preview-container');
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+        }
+        const removeInput = document.getElementById('remove_featured_image');
+        if (removeInput) {
+            removeInput.value = '1';
+        }
+    };
+</script>
 
 @stack('scripts')
 </body>

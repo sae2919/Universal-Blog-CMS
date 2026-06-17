@@ -21,6 +21,7 @@ class Post extends Model
         'cta_col1_title', 'cta_col1_links',
         'cta_col2_title', 'cta_col2_links',
         'cta_col3_title', 'cta_col3_links',
+        'image_metadata',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class Post extends Model
             'is_trending'  => 'boolean',
             'allow_comments' => 'boolean',
             'faqs'         => 'array',
+            'image_metadata' => 'array',
         ];
     }
 
@@ -64,7 +66,7 @@ class Post extends Model
 
     public function approvedComments()
     {
-        return $this->hasMany(Comment::class)->where('status', 'approved');
+        return $this->hasMany(Comment::class)->where('status', 'approved')->latest();
     }
 
     public function seoMeta()

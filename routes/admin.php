@@ -44,9 +44,6 @@ Route::prefix('admin')
         Route::post('menus/{menu}/builder', [App\Http\Controllers\Admin\MenuController::class, 'updateBuilder'])->name('menus.builder.update');
         Route::resource('menus', App\Http\Controllers\Admin\MenuController::class)->except(['show']);
 
-        // Media Library CRUD
-        Route::resource('media', App\Http\Controllers\Admin\MediaController::class)->except(['show', 'edit', 'update']);
-
         // Media Library JSON/Async endpoints
         Route::get('media-json', [App\Http\Controllers\Admin\MediaController::class, 'jsonList'])->name('media.json-list');
         Route::post('media-json/upload', [App\Http\Controllers\Admin\MediaController::class, 'jsonUpload'])->name('media.json-upload');
@@ -72,6 +69,7 @@ Route::prefix('admin')
         // Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/reset-analytics', [SettingController::class, 'resetAnalytics'])->name('settings.reset-analytics');
 
         // Trash Bin
         Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
@@ -93,6 +91,8 @@ Route::prefix('admin')
         Route::post('/ai/generate-keywords', [AiController::class, 'generateKeywords'])->name('ai.generate-keywords');
         Route::post('/ai/generate-seo-desc', [AiController::class, 'generateSeoDesc'])->name('ai.generate-seo-desc');
         Route::post('/ai/check-grammar', [AiController::class, 'checkGrammar'])->name('ai.check-grammar');
+        Route::post('/ai/correct-grammar', [AiController::class, 'correctGrammar'])->name('ai.correct-grammar');
+        Route::post('/ai/generate-faqs', [AiController::class, 'generateFaqs'])->name('ai.generate-faqs');
         Route::post('/ai/generate-image', [AiController::class, 'generateImage'])->name('ai.generate-image');
         Route::post('/ai/translate-post', [AiController::class, 'translatePost'])->name('ai.translate-post');
 

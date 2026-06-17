@@ -60,9 +60,18 @@
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center flex-shrink-0">
                                     {{ strtoupper(substr($post->author->name, 0, 1)) }}
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex-1">
                                     <span class="font-semibold text-gray-900 block truncate leading-none mb-1">{{ $post->author->name }}</span>
-                                    <span>{{ $post->published_at ? $post->published_at->format('M d, Y') : $post->created_at->format('M d, Y') }}</span>
+                                    <div class="flex flex-wrap items-center gap-1.5 text-gray-400">
+                                        <span>{{ $post->published_at ? $post->published_at->format('M d, Y') : $post->created_at->format('M d, Y') }}</span>
+                                        <span>·</span>
+                                        <span class="flex items-center gap-0.5">
+                                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            {{ number_format($post->views) }} {{ __('views') }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

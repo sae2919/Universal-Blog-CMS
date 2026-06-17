@@ -66,6 +66,7 @@ class PostController extends Controller
             'cta_col2_links'         => 'nullable|string',
             'cta_col3_title'         => 'nullable|string|max:255',
             'cta_col3_links'         => 'nullable|string',
+            'image_metadata'         => 'nullable|string',
         ]);
 
         if ($request->hasFile('featured_image')) {
@@ -81,6 +82,13 @@ class PostController extends Controller
         }
 
         $validated['user_id'] = auth()->id();
+        $validated['is_featured'] = $request->boolean('is_featured');
+        $validated['is_trending'] = $request->boolean('is_trending');
+        $validated['allow_comments'] = $request->boolean('allow_comments');
+        if ($request->has('image_metadata')) {
+            $meta = $request->input('image_metadata');
+            $validated['image_metadata'] = is_string($meta) ? json_decode($meta, true) : null;
+        }
 
         // Handle published_at logic for immediately published posts
         if ($validated['status'] === 'published') {
@@ -141,6 +149,7 @@ class PostController extends Controller
             'cta_col2_links'         => 'nullable|string',
             'cta_col3_title'         => 'nullable|string|max:255',
             'cta_col3_links'         => 'nullable|string',
+            'image_metadata'         => 'nullable|string',
         ]);
 
         if ($request->hasFile('featured_image')) {
@@ -167,6 +176,14 @@ class PostController extends Controller
             }
             $validated['cta_bg_image'] = $request->file('cta_bg_image')
                 ->store('ctas', 'public');
+        }
+
+        $validated['is_featured'] = $request->boolean('is_featured');
+        $validated['is_trending'] = $request->boolean('is_trending');
+        $validated['allow_comments'] = $request->boolean('allow_comments');
+        if ($request->has('image_metadata')) {
+            $meta = $request->input('image_metadata');
+            $validated['image_metadata'] = is_string($meta) ? json_decode($meta, true) : null;
         }
 
         // Handle published_at logic for immediately published posts

@@ -17,6 +17,7 @@
     <form action="{{ route('admin.pages.update', $page->id) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         @csrf
         @method('PUT')
+        <input type="hidden" name="image_metadata" id="image_metadata_input">
 
         {{-- Left column (Main content) --}}
         <div class="lg:col-span-2 space-y-6">
@@ -77,16 +78,7 @@
                     </select>
                 </div>
 
-                <div>
-                    <label for="locale" class="block text-sm font-semibold text-gray-700">Language (Locale)</label>
-                    <select name="locale" id="locale" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="en" {{ old('locale', $page->locale) === 'en' ? 'selected' : '' }}>🇺🇸 English</option>
-                        <option value="fr" {{ old('locale', $page->locale) === 'fr' ? 'selected' : '' }}>🇫🇷 French</option>
-                        <option value="de" {{ old('locale', $page->locale) === 'de' ? 'selected' : '' }}>🇩🇪 German</option>
-                        <option value="hi" {{ old('locale', $page->locale) === 'hi' ? 'selected' : '' }}>🇮🇳 हिन्दी</option>
-                        <option value="te" {{ old('locale', $page->locale) === 'te' ? 'selected' : '' }}>🇮🇳 తెలుగు</option>
-                    </select>
-                </div>
+                <input type="hidden" name="locale" id="locale" value="{{ old('locale', $page->locale) }}">
 
                 <div class="pt-4 border-t border-gray-100 space-y-4">
                     <label class="block text-sm font-semibold text-gray-700">Page Navigation Visibility</label>
@@ -252,9 +244,27 @@
 @push('scripts')
 @include('admin.partials.tiptap')
 <script>
+    if (window.initializeImageRegistry) {
+        window.initializeImageRegistry(@json($page->image_metadata ?? (object)[]));
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize main body editor
         initEditor('#content', 500);
+
+        // Ensure Tiptap / TinyMCE contents are saved and serialize registry before form submit
+        const form = document.querySelector('form[action*="pages"]');
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (typeof tinymce !== 'undefined') {
+                    tinymce.triggerSave();
+                }
+                const imageMetadataInput = document.getElementById('image_metadata_input');
+                if (imageMetadataInput) {
+                    imageMetadataInput.value = JSON.stringify(window.uploadedImagesMap || {});
+                }
+            });
+        }
     });
 
     function mediaPicker() {
@@ -304,6 +314,10 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                if (window.registerAndLogImageFile) {
+                    window.registerAndLogImageFile(file);
+                }
+
                 const formData = new FormData();
                 formData.append('file', file);
 
@@ -322,7 +336,12 @@
                 .then(data => {
                     this.fetchImages();
                     if (this.currentCallback) {
-                        this.currentCallback(data.location, { alt: file.name, path: data.path });
+                        this.currentCallback(data.location, { 
+                            alt: file.name, 
+                            path: data.path,
+                            mime_type: data.mime_type,
+                            file_size: data.file_size
+                        });
                         this.close();
                     }
                 })
@@ -334,7 +353,12 @@
 
             selectImage(img) {
                 if (this.currentCallback) {
-                    this.currentCallback(img.url, { alt: img.file_name, path: img.file_path });
+                    this.currentCallback(img.url, { 
+                        alt: img.file_name, 
+                        path: img.file_path,
+                        mime_type: img.mime_type,
+                        file_size: img.file_size
+                    });
                 }
                 this.close();
             }
@@ -344,17 +368,28 @@
     function selectFeaturedImage() {
         if (window.openMediaPicker) {
             window.openMediaPicker(function(url, meta) {
+                if (window.registerAndLogImageDetails) {
+                    window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
+                }
                 const previewContainer = document.getElementById('image-preview-container');
+                const html = `
+                    <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm max-h-40 bg-gray-50 flex items-center justify-center">
+                        <img src="${url}" class="w-full h-32 object-cover" />
+                        <input type="hidden" name="generated_image_path" value="${meta.path}" />
+                        <button type="button" onclick="clearMediaLibrarySelection()" class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Selection">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>`;
                 if (previewContainer) {
-                    previewContainer.innerHTML = `<img src='${url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
-                                                  <input type='hidden' name='generated_image_path' value='${meta.path}' />`;
+                    previewContainer.innerHTML = html;
                 } else {
                     const parent = document.getElementById('featured_image').parentElement;
                     const preview = document.createElement('div');
                     preview.id = 'image-preview-container';
                     preview.className = 'mb-2';
-                    preview.innerHTML = `<img src='${url}' class='w-full h-32 object-cover rounded-lg border shadow-sm' />
-                                         <input type='hidden' name='generated_image_path' value='${meta.path}' />`;
+                    preview.innerHTML = html;
                     parent.insertBefore(preview, parent.firstChild);
                 }
             });
