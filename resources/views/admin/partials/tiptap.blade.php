@@ -922,12 +922,72 @@
                     }
                 }
                 else if (cmd === 'insertSlider') {
-                    editor.chain().focus().insertContent(
-                        '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
-                        '  <p><img src="https://images.unsplash.com/photo-1516116211223-4c599701b844?w=500" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>' +
-                        '  <p><img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>' +
-                        '</div><p></p>'
-                    ).run();
+                    if (window.openMediaPicker) {
+                        const urls = [];
+                        const modal = document.querySelector('[x-data="mediaPicker()"]');
+                        
+                        const getNextImage = () => {
+                            let selectedThisTurn = false;
+                            let observer = null;
+                            
+                            if (modal) {
+                                observer = new MutationObserver(() => {
+                                    if (modal.style.display === 'none') {
+                                        observer.disconnect();
+                                        // Wait a moment for Alpine.js/DOM to settle
+                                        setTimeout(() => {
+                                            if (!selectedThisTurn) {
+                                                insertCollectedSlider();
+                                            }
+                                        }, 100);
+                                    }
+                                });
+                                observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+                            }
+                            
+                            window.openMediaPicker(function(url, meta) {
+                                selectedThisTurn = true;
+                                if (observer) observer.disconnect();
+                                
+                                if (window.registerAndLogImageDetails) {
+                                    window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
+                                }
+                                urls.push({ url: url, alt: meta.alt || '' });
+                                
+                                setTimeout(() => {
+                                    if (confirm('Image added! Would you like to select another image to this slider?')) {
+                                        getNextImage();
+                                    } else {
+                                        insertCollectedSlider();
+                                    }
+                                }, 250);
+                            });
+                        };
+                        
+                        const insertCollectedSlider = () => {
+                            if (urls.length === 0) return;
+                            let imagesHtml = '';
+                            urls.forEach(item => {
+                                imagesHtml += '  <p><img src="' + item.url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" alt="' + item.alt + '" /></p>';
+                            });
+                            editor.chain().focus().insertContent(
+                                '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
+                                imagesHtml +
+                                '</div><p></p>'
+                            ).run();
+                        };
+                        
+                        getNextImage();
+                    } else {
+                        const url = window.prompt('Enter Image URL to start slider:');
+                        if (url) {
+                            editor.chain().focus().insertContent(
+                                '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
+                                '  <p><img src="' + url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>' +
+                                '</div><p></p>'
+                            ).run();
+                        }
+                    }
                 }
                 else if (cmd === 'insertImageLeft') {
                     editor.chain().focus().insertContent(

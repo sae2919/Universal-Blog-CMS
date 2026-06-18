@@ -2,7 +2,7 @@
 
 @section('title', 'Edit Menu Structure')
 @section('header')
-    Edit Menu: <span class="text-indigo-650 dark:text-indigo-405 font-bold">{{ $menu->name }}</span>
+    Edit Menu: <span class="text-indigo-600 dark:text-indigo-400 font-bold">{{ $menu->name }}</span>
 @endsection
 
 @section('content')
@@ -49,14 +49,14 @@
             <div x-show="activeSection === 'pages'" x-transition class="p-5 border-t border-gray-100 dark:border-slate-700 space-y-4">
                 @if($pages->isNotEmpty())
                     <div id="pages-panel">
-                        <label class="flex items-center gap-2 text-xs font-bold text-indigo-655 dark:text-indigo-400 cursor-pointer mb-3">
-                            <input type="checkbox" id="page-select-all" onchange="toggleSelectAll('page-select-all', '.page-checkbox')" class="rounded border-gray-300 text-indigo-655 focus:ring-indigo-500">
+                        <label class="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer mb-3">
+                            <input type="checkbox" id="page-select-all" onchange="toggleSelectAll('page-select-all', '.page-checkbox')" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <span>Select All Pages</span>
                         </label>
                         <div class="max-h-48 overflow-y-auto border border-gray-150 dark:border-slate-700 rounded-lg p-3 space-y-2 bg-gray-50/50 dark:bg-slate-900/40">
                             @foreach($pages as $page)
                                 <label class="flex items-center gap-2 text-sm text-gray-755 dark:text-slate-200 cursor-pointer">
-                                    <input type="checkbox" name="selected_pages[]" value="{{ $page->slug }}" data-title="{{ $page->title }}" class="rounded border-gray-300 text-indigo-655 focus:ring-indigo-550 page-checkbox">
+                                    <input type="checkbox" name="selected_pages[]" value="{{ $page->slug }}" data-title="{{ $page->title }}" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 page-checkbox">
                                     <span class="truncate">{{ $page->title }}</span>
                                     <span class="text-[9px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-750 text-gray-500 font-mono flex-shrink-0">{{ strtoupper($page->locale) }}</span>
                                 </label>
@@ -70,7 +70,7 @@
                             </select>
                         </div>
                         <button type="button" id="add-pages-btn" onclick="addCheckedPages()"
-                                class="add-pages-btn w-full mt-3 py-2 bg-indigo-655 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
+                                class="add-pages-btn w-full mt-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
                             Add Pages to Menu
                         </button>
                     </div>
@@ -92,14 +92,14 @@
             <div x-show="activeSection === 'categories'" x-transition class="p-5 border-t border-gray-100 dark:border-slate-700 space-y-4">
                 @if($categories->isNotEmpty())
                     <div id="categories-panel">
-                        <label class="flex items-center gap-2 text-xs font-bold text-indigo-655 dark:text-indigo-400 cursor-pointer mb-3">
-                            <input type="checkbox" id="category-select-all" onchange="toggleSelectAll('category-select-all', '.category-checkbox')" class="rounded border-gray-300 text-indigo-655 focus:ring-indigo-500">
+                        <label class="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer mb-3">
+                            <input type="checkbox" id="category-select-all" onchange="toggleSelectAll('category-select-all', '.category-checkbox')" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <span>Select All Categories</span>
                         </label>
                         <div class="max-h-48 overflow-y-auto border border-gray-150 dark:border-slate-700 rounded-lg p-3 space-y-2 bg-gray-50/50 dark:bg-slate-900/40">
                             @foreach($categories as $cat)
                                 <label class="flex items-center gap-2 text-sm text-gray-755 dark:text-slate-200 cursor-pointer">
-                                    <input type="checkbox" name="selected_categories[]" value="{{ $cat->slug }}" data-title="{{ $cat->name }}" class="rounded border-gray-300 text-indigo-655 focus:ring-indigo-550 category-checkbox">
+                                    <input type="checkbox" name="selected_categories[]" value="{{ $cat->slug }}" data-title="{{ $cat->name }}" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 category-checkbox">
                                     <span class="truncate">{{ $cat->name }}</span>
                                     <span class="text-[9px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-750 text-gray-500 font-mono flex-shrink-0">{{ strtoupper($cat->locale) }}</span>
                                 </label>
@@ -113,7 +113,7 @@
                             </select>
                         </div>
                         <button type="button" id="add-categories-btn" onclick="addCheckedCategories()"
-                                class="add-categories-btn w-full mt-3 py-2 bg-indigo-655 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
+                                class="add-categories-btn w-full mt-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
                             Add Categories to Menu
                         </button>
                     </div>
@@ -155,7 +155,7 @@
                 </div>
 
                 <button type="button" @click="addMenuItem(); title = ''; url = ''" x-show="title.trim() !== '' && url.trim() !== ''"
-                        class="w-full py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
+                        class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-300">
                     Add Custom Link
                 </button>
             </div>
@@ -239,7 +239,7 @@
                     
                     <!-- Indent / Outdent Nesting buttons -->
                     ${!isChild ? `
-                        <button type="button" onclick="indentItem(${index})" class="px-2 py-1 hover:bg-indigo-100 dark:hover:bg-slate-750 rounded text-xs text-indigo-650 font-bold" title="Move this item inside the menu item above it to create a sub-menu">→ Make Sub-menu</button>
+                        <button type="button" onclick="indentItem(${index})" class="px-2 py-1 hover:bg-indigo-100 dark:hover:bg-slate-750 rounded text-xs text-indigo-600 font-bold" title="Move this item inside the menu item above it to create a sub-menu">→ Make Sub-menu</button>
                     ` : `
                         <button type="button" onclick="outdentItem(${index})" class="px-2 py-1 hover:bg-gray-200 dark:hover:bg-slate-750 rounded text-xs text-gray-600 font-bold" title="Move this item back to the main level">← Make Main Link</button>
                     `}

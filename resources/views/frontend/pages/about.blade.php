@@ -33,7 +33,7 @@
         {{-- Render Dynamic HTML Content directly from Database with relative paths sanitized --}}
         <div class="prose prose-indigo prose-lg max-w-none dark:prose-invert text-gray-650 dark:text-slate-350 leading-relaxed 
                     prose-headings:text-indigo-950 dark:prose-headings:text-white prose-headings:font-extrabold
-                    prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-3 prose-h2:border-b prose-h2:border-gray-150 dark:prose-h2:border-slate-800
+                    prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
                     prose-p:mb-6 prose-li:mb-2 prose-ul:list-disc prose-ul:pl-6">
             {!! preg_replace('/(\.\.\/)+storage\//', '/storage/', $page->content) !!}
         </div>

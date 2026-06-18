@@ -35,9 +35,19 @@
                                 <span class="text-[10px] text-gray-400 block mt-2">{{ $comment->created_at->format('M d, Y \a\t H:i') }}</span>
                             </td>
                             <td class="px-6 py-4">
-                                <a href="{{ route('blog.show', [$comment->post->category->slug, $comment->post->slug]) }}" target="_blank" class="text-indigo-650 hover:underline font-semibold text-xs leading-snug block truncate max-w-[180px]">
-                                    {{ $comment->post->title }}
-                                </a>
+                                @if($comment->post)
+                                    @if($comment->post->category)
+                                        <a href="{{ route('blog.show', [$comment->post->category->slug, $comment->post->slug]) }}" target="_blank" class="text-indigo-600 hover:underline font-semibold text-xs leading-snug block truncate max-w-[180px]">
+                                            {{ $comment->post->title }}
+                                        </a>
+                                    @else
+                                        <span class="text-gray-700 font-semibold text-xs leading-snug block truncate max-w-[180px]" title="{{ $comment->post->title }}">
+                                            {{ $comment->post->title }} <span class="text-[9.5px] text-gray-400 font-normal block mt-0.5">(Uncategorized)</span>
+                                        </span>
+                                    @endif
+                                @else
+                                    <span class="text-red-500 italic text-xs">{{ __('Deleted Post') }}</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase
