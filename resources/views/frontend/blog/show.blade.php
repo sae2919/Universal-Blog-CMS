@@ -310,7 +310,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    function initPostPage() {
         const progressBar = document.getElementById('scrollProgressBar');
         if (progressBar) {
             window.addEventListener('scroll', function() {
@@ -326,241 +326,275 @@
         }
 
         // Parse and transform sliders
-        document.querySelectorAll('.post-slider').forEach((slider, index) => {
-            const images = Array.from(slider.querySelectorAll('img'));
-            if (images.length === 0) return;
+        try {
+            document.querySelectorAll('.post-slider').forEach((slider, index) => {
+                const images = Array.from(slider.querySelectorAll('img'));
+                if (images.length === 0) return;
 
-            // Create structured markup for Splide
-            const splideId = 'splide-slider-' + index;
-            const splideDiv = document.createElement('div');
-            splideDiv.id = splideId;
-            splideDiv.className = 'splide my-8 rounded-2xl overflow-hidden shadow-lg border border-gray-150 dark:border-slate-800';
+                // Create structured markup for Splide
+                const splideId = 'splide-slider-' + index;
+                const splideDiv = document.createElement('div');
+                splideDiv.id = splideId;
+                splideDiv.className = 'splide my-8 rounded-2xl overflow-hidden shadow-lg border border-gray-150 dark:border-slate-800';
 
-            const track = document.createElement('div');
-            track.className = 'splide__track';
+                const track = document.createElement('div');
+                track.className = 'splide__track';
 
-            const list = document.createElement('ul');
-            list.className = 'splide__list';
+                const list = document.createElement('ul');
+                list.className = 'splide__list';
 
-            images.forEach(img => {
-                const slide = document.createElement('li');
-                slide.className = 'splide__slide flex justify-center items-center bg-black';
-                const slideImg = document.createElement('img');
-                slideImg.src = img.src;
-                slideImg.alt = img.alt || 'Slide';
-                slideImg.className = 'w-full max-h-[480px] object-cover';
-                slide.appendChild(slideImg);
-                list.appendChild(slide);
+                images.forEach(img => {
+                    const slide = document.createElement('li');
+                    slide.className = 'splide__slide flex justify-center items-center bg-black';
+                    const slideImg = document.createElement('img');
+                    slideImg.src = img.src;
+                    slideImg.alt = img.alt || 'Slide';
+                    slideImg.className = 'w-full max-h-[480px] object-cover';
+                    slide.appendChild(slideImg);
+                    list.appendChild(slide);
+                });
+
+                track.appendChild(list);
+                splideDiv.appendChild(track);
+
+                // Replace the original div with our Splide instance
+                slider.parentNode.replaceChild(splideDiv, slider);
+
+                // Mount Splide
+                if (typeof Splide !== 'undefined') {
+                    new Splide('#' + splideId, {
+                        type: 'loop',
+                        perPage: 1,
+                        autoplay: true,
+                        interval: 4000,
+                        speed: 800,
+                        arrows: images.length > 1,
+                        pagination: images.length > 1,
+                    }).mount();
+                } else {
+                    console.warn('Splide is not defined. Splide slider could not be mounted.');
+                }
             });
-
-            track.appendChild(list);
-            splideDiv.appendChild(track);
-
-            // Replace the original div with our Splide instance
-            slider.parentNode.replaceChild(splideDiv, slider);
-
-            // Mount Splide
-            new Splide('#' + splideId, {
-                type: 'loop',
-                perPage: 1,
-                autoplay: true,
-                interval: 4000,
-                speed: 800,
-                arrows: images.length > 1,
-                pagination: images.length > 1,
-            }).mount();
-        });
+        } catch (e) {
+            console.error('Error transforming sliders:', e);
+        }
 
         // Dynamic Table of Contents (TOC)
-        const contentContainer = document.querySelector('.prose');
-        if (contentContainer) {
-            const headingElements = contentContainer.querySelectorAll('h2, h3');
-            if (headingElements.length >= 2) {
-                const headings = [];
-                const idCounts = {};
+        try {
+            const contentContainer = document.querySelector('.prose');
+            if (contentContainer) {
+                const headingElements = contentContainer.querySelectorAll('h1, h2, h3');
+                if (headingElements.length >= 1) {
+                    const headings = [];
+                    const idCounts = {};
 
-                // Helper to slugify heading text
-                const slugify = text => {
-                    return text.toLowerCase()
-                        .trim()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/(^-|-$)+/g, '');
-                };
+                    // Helper to slugify heading text
+                    const slugify = text => {
+                        return text.toLowerCase()
+                            .trim()
+                            .replace(/[^a-z0-9]+/g, '-')
+                            .replace(/(^-|-$)+/g, '');
+                    };
 
-                headingElements.forEach(el => {
-                    let id = el.id || slugify(el.textContent);
-                    if (!id) id = 'section';
-                    
-                    if (idCounts[id]) {
-                        idCounts[id]++;
-                        id = `${id}-${idCounts[id]}`;
-                    } else {
-                        idCounts[id] = 1;
-                    }
-                    
-                    el.id = id;
-                    headings.push({
-                        id: id,
-                        text: el.textContent.trim(),
-                        tagName: el.tagName.toLowerCase()
-                    });
-                });
-
-                // Generate Inline TOC Card
-                const firstHeading = headingElements[0];
-                const inlineTocDiv = document.createElement('div');
-                inlineTocDiv.className = 'bg-gray-50/50 dark:bg-slate-800/10 border border-gray-150 dark:border-slate-800/80 rounded-2xl p-5 mb-8 max-w-2xl transition-all duration-300 shadow-sm';
-                
-                                let inlineListItems = '';
-                headings.forEach(h => {
-                    const indentClass = h.tagName === 'h3' 
-                        ? 'text-gray-500 dark:text-slate-400 text-sm ml-5' 
-                        : 'font-semibold text-gray-800 dark:text-slate-200 text-sm';
-                    inlineListItems += `
-                        <li class="${indentClass} flex items-center gap-2">
-                            ${h.tagName === 'h2' 
-                                ? '<span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block flex-shrink-0"></span>' 
-                                : '<span class="w-1 h-1 rounded-full border border-gray-400 dark:border-slate-500 inline-block flex-shrink-0"></span>'}
-                            <a href="#${h.id}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-150">${h.text}</a>
-                        </li>
-                    `;
-                });
-
-                inlineTocDiv.innerHTML = `
-                    <div class="flex items-center justify-between cursor-pointer select-none pb-2.5 border-b border-gray-150 dark:border-slate-800/50 toc-toggle-header">
-                        <h3 class="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 m-0 border-none p-0">
-                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </svg>
-                            {{ __('Table of Contents') }}
-                        </h3>
-                        <button class="text-gray-400 hover:text-indigo-500 transition-colors p-1" aria-label="Toggle Table of Contents">
-                            <svg class="w-4 h-4 transition-transform duration-250 toc-chevron" style="transform: rotate(0deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mt-4 toc-body" style="display: block;">
-                        <ul class="space-y-3 list-none pl-0 m-0">
-                            ${inlineListItems}
-                        </ul>
-                    </div>
-                `;
-                firstHeading.parentNode.insertBefore(inlineTocDiv, firstHeading);
-
-                // Set up collapsible toggle
-                const toggleHeader = inlineTocDiv.querySelector('.toc-toggle-header');
-                const tocBody = inlineTocDiv.querySelector('.toc-body');
-                const chevron = inlineTocDiv.querySelector('.toc-chevron');
-                if (toggleHeader && tocBody && chevron) {
-                    toggleHeader.addEventListener('click', () => {
-                        const isHidden = tocBody.style.display === 'none';
-                        if (isHidden) {
-                            tocBody.style.display = 'block';
-                            chevron.style.transform = 'rotate(0deg)';
+                    headingElements.forEach(el => {
+                        let id = el.id || slugify(el.textContent);
+                        if (!id) id = 'section';
+                        
+                        if (idCounts[id]) {
+                            idCounts[id]++;
+                            id = `${id}-${idCounts[id]}`;
                         } else {
-                            tocBody.style.display = 'none';
-                            chevron.style.transform = 'rotate(-90deg)';
+                            idCounts[id] = 1;
                         }
+                        
+                        el.id = id;
+                        headings.push({
+                            id: id,
+                            text: el.textContent.trim(),
+                            tagName: el.tagName.toLowerCase()
+                        });
                     });
-                }
 
-                // Generate Sidebar TOC
-                const sidebarContainer = document.getElementById('sidebar-toc-container');
-                const sidebarList = document.getElementById('sidebar-toc-list');
-                if (sidebarContainer && sidebarList) {
-                    sidebarContainer.classList.remove('hidden');
+                    // Generate Inline TOC Card
+                    const firstHeading = headingElements[0];
+                    const inlineTocDiv = document.createElement('div');
+                    inlineTocDiv.className = 'bg-gray-50/50 dark:bg-slate-800/10 border border-gray-150 dark:border-slate-800/80 rounded-2xl p-5 mb-8 max-w-2xl transition-all duration-300 shadow-sm';
                     
-                    let sidebarListItems = '';
+                    let inlineListItems = '';
                     headings.forEach(h => {
-                        const indentStyle = h.tagName === 'h3' 
-                            ? 'pl-4 text-[11px] text-gray-500 dark:text-slate-400' 
-                            : 'font-medium text-gray-700 dark:text-slate-350 text-xs';
-                        sidebarListItems += `
-                            <li>
-                                <a href="#${h.id}" data-heading-id="${h.id}" class="${indentStyle} block py-0.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-150 truncate" title="${h.text}">${h.text}</a>
+                        const indentClass = h.tagName === 'h3' 
+                            ? 'text-gray-500 dark:text-slate-400 text-sm ml-6' 
+                            : (h.tagName === 'h2' 
+                                ? 'font-medium text-gray-700 dark:text-slate-350 text-sm ml-3' 
+                                : 'font-semibold text-gray-800 dark:text-slate-200 text-sm');
+                        inlineListItems += `
+                            <li class="${indentClass} flex items-center gap-2">
+                                ${h.tagName === 'h1' 
+                                    ? '<span class="w-2 h-2 rounded bg-indigo-600 inline-block flex-shrink-0"></span>' 
+                                    : (h.tagName === 'h2'
+                                        ? '<span class="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block flex-shrink-0"></span>' 
+                                        : '<span class="w-1 h-1 rounded-full border border-gray-400 dark:border-slate-500 inline-block flex-shrink-0"></span>')}
+                                <a href="#${h.id}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-150">${h.text}</a>
                             </li>
                         `;
                     });
-                    sidebarList.innerHTML = sidebarListItems;
 
-                    // ScrollSpy & Smooth Scroll Logic
-                    const headerOffset = 96;
-                    const sidebarLinks = sidebarList.querySelectorAll('a');
-                    const indicator = document.getElementById('toc-indicator');
-                    
-                    const updateActiveHeading = () => {
-                        let activeId = null;
-                        for (let i = 0; i < headingElements.length; i++) {
-                            const rect = headingElements[i].getBoundingClientRect();
-                            if (rect.top <= headerOffset + 20) {
-                                activeId = headingElements[i].id;
-                            }
-                        }
-                        
-                        if (!activeId && headingElements.length > 0) {
-                            activeId = headingElements[0].id;
-                        }
-                        
-                        let activeLink = null;
-                        sidebarLinks.forEach(link => {
-                            if (link.getAttribute('data-heading-id') === activeId) {
-                                link.classList.add('text-indigo-600', 'dark:text-indigo-400', 'font-semibold');
-                                link.classList.remove('text-gray-500', 'dark:text-slate-400', 'text-gray-700', 'dark:text-slate-350');
-                                activeLink = link;
+                    inlineTocDiv.innerHTML = `
+                        <div class="flex items-center justify-between cursor-pointer select-none pb-2.5 border-b border-gray-150 dark:border-slate-800/50 toc-toggle-header">
+                            <h3 class="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 m-0 border-none p-0">
+                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                                {{ __('Table of Contents') }}
+                            </h3>
+                            <button class="text-gray-400 hover:text-indigo-500 transition-colors p-1" aria-label="Toggle Table of Contents">
+                                <svg class="w-4 h-4 transition-transform duration-250 toc-chevron" style="transform: rotate(0deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="mt-4 toc-body" style="display: block;">
+                            <ul class="space-y-3 list-none pl-0 m-0">
+                                ${inlineListItems}
+                            </ul>
+                        </div>
+                    `;
+
+                    // Safely insert TOC card as a direct child of the content container (prevent nesting inside inline formatting tags)
+                    let targetElement = firstHeading;
+                    while (targetElement.parentNode && targetElement.parentNode !== contentContainer) {
+                        targetElement = targetElement.parentNode;
+                    }
+                    contentContainer.insertBefore(inlineTocDiv, targetElement);
+
+                    // Set up collapsible toggle
+                    const toggleHeader = inlineTocDiv.querySelector('.toc-toggle-header');
+                    const tocBody = inlineTocDiv.querySelector('.toc-body');
+                    const chevron = inlineTocDiv.querySelector('.toc-chevron');
+                    if (toggleHeader && tocBody && chevron) {
+                        toggleHeader.addEventListener('click', () => {
+                            const isHidden = tocBody.style.display === 'none';
+                            if (isHidden) {
+                                tocBody.style.display = 'block';
+                                chevron.style.transform = 'rotate(0deg)';
                             } else {
-                                link.classList.remove('text-indigo-600', 'dark:text-indigo-400', 'font-semibold');
-                                const isSub = link.classList.contains('pl-4');
-                                if (isSub) {
-                                    link.classList.add('text-gray-500', 'dark:text-slate-400');
-                                } else {
-                                    link.classList.add('text-gray-700', 'dark:text-slate-350');
-                                }
+                                tocBody.style.display = 'none';
+                                chevron.style.transform = 'rotate(-90deg)';
                             }
                         });
+                    }
+
+                    // Generate Sidebar TOC
+                    const sidebarContainer = document.getElementById('sidebar-toc-container');
+                    const sidebarList = document.getElementById('sidebar-toc-list');
+                    if (sidebarContainer && sidebarList) {
+                        sidebarContainer.classList.remove('hidden');
                         
-                        if (activeLink && indicator) {
-                            const parentRect = sidebarList.getBoundingClientRect();
-                            const linkRect = activeLink.getBoundingClientRect();
-                            indicator.style.top = `${linkRect.top - parentRect.top}px`;
-                            indicator.style.height = `${linkRect.height}px`;
-                        } else if (indicator) {
-                            indicator.style.height = '0px';
-                        }
-                    };
+                        let sidebarListItems = '';
+                        headings.forEach(h => {
+                            const indentStyle = h.tagName === 'h3' 
+                                ? 'pl-6 text-[11px] text-gray-500 dark:text-slate-400' 
+                                : (h.tagName === 'h2'
+                                    ? 'pl-3 text-xs text-gray-660 dark:text-slate-350'
+                                    : 'font-medium text-gray-750 dark:text-slate-205 text-xs');
+                            sidebarListItems += `
+                                <li>
+                                    <a href="#${h.id}" data-heading-id="${h.id}" class="${indentStyle} block py-0.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-150 truncate" title="${h.text}">${h.text}</a>
+                                </li>
+                            `;
+                        });
+                        sidebarList.innerHTML = sidebarListItems;
 
-                    window.addEventListener('scroll', updateActiveHeading);
-                    updateActiveHeading();
-                    
-                    // Smooth scroll implementation
-                    const handleAnchorClick = e => {
-                        const href = e.currentTarget.getAttribute('href');
-                        if (href && href.startsWith('#')) {
-                            const targetEl = document.querySelector(href);
-                            if (targetEl) {
-                                e.preventDefault();
-                                const targetPosition = targetEl.getBoundingClientRect().top + window.scrollY - headerOffset;
-                                window.scrollTo({
-                                    top: targetPosition,
-                                    behavior: 'smooth'
-                                });
-                                setTimeout(() => {
-                                    history.pushState(null, null, href);
-                                    updateActiveHeading(); // Immediately correct the line indicator positioning
-                                }, 600);
+                        // ScrollSpy & Smooth Scroll Logic
+                        const headerOffset = 96;
+                        const sidebarLinks = sidebarList.querySelectorAll('a');
+                        const indicator = document.getElementById('toc-indicator');
+                        
+                        const updateActiveHeading = () => {
+                            let activeId = null;
+                            for (let i = 0; i < headingElements.length; i++) {
+                                const rect = headingElements[i].getBoundingClientRect();
+                                if (rect.top <= headerOffset + 20) {
+                                    activeId = headingElements[i].id;
+                                }
                             }
-                        }
-                    };
+                            
+                            if (!activeId && headingElements.length > 0) {
+                                activeId = headingElements[0].id;
+                            }
+                            
+                            let activeLink = null;
+                            sidebarLinks.forEach(link => {
+                                if (link.getAttribute('data-heading-id') === activeId) {
+                                    link.classList.add('text-indigo-600', 'dark:text-indigo-400', 'font-semibold');
+                                    link.classList.remove('text-gray-500', 'dark:text-slate-400', 'text-gray-660', 'dark:text-slate-350', 'text-gray-750', 'dark:text-slate-205');
+                                    activeLink = link;
+                                } else {
+                                    link.classList.remove('text-indigo-600', 'dark:text-indigo-400', 'font-semibold');
+                                    const isSub = link.classList.contains('pl-3') || link.classList.contains('pl-6');
+                                    if (isSub) {
+                                        if (link.classList.contains('pl-6')) {
+                                            link.classList.add('text-gray-500', 'dark:text-slate-400');
+                                        } else {
+                                            link.classList.add('text-gray-660', 'dark:text-slate-350');
+                                        }
+                                    } else {
+                                        link.classList.add('text-gray-750', 'dark:text-slate-205');
+                                    }
+                                }
+                            });
+                            
+                            if (activeLink && indicator) {
+                                const parentRect = sidebarList.getBoundingClientRect();
+                                const linkRect = activeLink.getBoundingClientRect();
+                                indicator.style.top = `${linkRect.top - parentRect.top}px`;
+                                indicator.style.height = `${linkRect.height}px`;
+                            } else if (indicator) {
+                                indicator.style.height = '0px';
+                            }
+                        };
 
-                    document.querySelectorAll('a[href^="#"]').forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href && href !== '#' && document.querySelector(href)) {
-                            link.addEventListener('click', handleAnchorClick);
-                        }
-                    });
+                        window.addEventListener('scroll', updateActiveHeading);
+                        updateActiveHeading();
+                        
+                        // Smooth scroll implementation
+                        const handleAnchorClick = e => {
+                            const href = e.currentTarget.getAttribute('href');
+                            if (href && href.startsWith('#')) {
+                                const targetEl = document.querySelector(href);
+                                if (targetEl) {
+                                    e.preventDefault();
+                                    const targetPosition = targetEl.getBoundingClientRect().top + window.scrollY - headerOffset;
+                                    window.scrollTo({
+                                        top: targetPosition,
+                                        behavior: 'smooth'
+                                    });
+                                    setTimeout(() => {
+                                        history.pushState(null, null, href);
+                                        updateActiveHeading(); // Immediately correct the line indicator positioning
+                                    }, 600);
+                                }
+                            }
+                        };
+
+                        document.querySelectorAll('a[href^="#"]').forEach(link => {
+                            const href = link.getAttribute('href');
+                            if (href && href !== '#' && document.querySelector(href)) {
+                                link.addEventListener('click', handleAnchorClick);
+                            }
+                        });
+                    }
                 }
             }
+        } catch (e) {
+            console.error('Error generating Table of Contents:', e);
         }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPostPage);
+    } else {
+        initPostPage();
+    }
 </script>
 @endpush

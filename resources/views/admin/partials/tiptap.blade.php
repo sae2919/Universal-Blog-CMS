@@ -95,9 +95,76 @@
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         box-shadow: 0 4px 12px 0 rgba(99, 102, 241, 0.2);
     }
-    .dark .ProseMirror a.cta-button:hover {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        box-shadow: 0 6px 16px 0 rgba(99, 102, 241, 0.3);
+    /* Floating Toolbars/Buttons styling in Editor */
+    .tiptap-image-delete-btn,
+    .tiptap-cta-delete-btn,
+    .tiptap-cta-button-delete-btn {
+        background-color: #ef4444 !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-family: inherit !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        cursor: pointer !important;
+        padding: 0.375rem 0.625rem !important; /* px-2.5 py-1.5 */
+        font-size: 0.75rem !important; /* text-xs */
+        font-weight: 600 !important; /* font-semibold */
+        border-radius: 0.5rem !important; /* rounded-lg */
+        display: inline-flex !important; /* flex */
+        align-items: center !important; /* items-center */
+        gap: 0.375rem !important; /* gap-1.5 */
+        transition: all 0.2s ease-out !important; /* transition-all duration-200 ease-out */
+    }
+    .tiptap-image-delete-btn:hover,
+    .tiptap-cta-delete-btn:hover,
+    .tiptap-cta-button-delete-btn:hover {
+        background-color: #dc2626 !important;
+    }
+
+    .tiptap-slider-toolbar {
+        background-color: #1e293b !important; /* Dark Slate background */
+        color: #ffffff !important;
+        border: 1px solid #475569 !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        padding: 0.375rem 0.75rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        font-family: inherit !important;
+    }
+    .tiptap-slider-toolbar.hidden {
+        display: none !important;
+    }
+    .tiptap-slider-toolbar button {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.375rem !important;
+        cursor: pointer !important;
+        transition: color 0.15s ease-in-out !important;
+    }
+    .tiptap-slider-toolbar .tiptap-slider-add-btn {
+        color: #818cf8 !important; /* light indigo */
+    }
+    .tiptap-slider-toolbar .tiptap-slider-add-btn:hover {
+        color: #a5b4fc !important;
+    }
+    .tiptap-slider-toolbar .tiptap-slider-delete-btn {
+        color: #f87171 !important; /* light red */
+    }
+    .tiptap-slider-toolbar .tiptap-slider-delete-btn:hover {
+        color: #fca5a5 !important;
+    }
+    .tiptap-slider-toolbar .divider {
+        width: 1px !important;
+        height: 12px !important;
+        background-color: #475569 !important;
+        display: inline-block !important;
     }
 </style>
 
@@ -225,6 +292,240 @@
             },
             renderHTML({ HTMLAttributes }) {
                 return ['div', mergeAttributes(HTMLAttributes), 0];
+            }
+        });
+
+        // Custom Resizable Image Node View
+        const ResizableImage = Image.extend({
+            addAttributes() {
+                return {
+                    ...this.parent?.(),
+                    width: {
+                        default: null,
+                        parseHTML: element => element.style.width || element.getAttribute('width') || null,
+                        renderHTML: attributes => {
+                            if (!attributes.width) return {};
+                            return {
+                                width: attributes.width,
+                                style: `width: ${attributes.width}; max-width: 100%; height: auto;`
+                            };
+                        }
+                    },
+                    textAlign: {
+                        default: 'center',
+                        parseHTML: element => {
+                            if (element.style.float === 'left' || element.style.marginLeft === '0px' || element.style.marginLeft === '0') return 'left';
+                            if (element.style.float === 'right' || element.style.marginRight === '0px' || element.style.marginRight === '0') return 'right';
+                            return element.style.textAlign || element.getAttribute('align') || 'center';
+                        },
+                        renderHTML: attributes => {
+                            const align = attributes.textAlign || 'center';
+                            if (align === 'left') {
+                                return {
+                                    style: 'float: left; margin-right: 1.5rem; margin-bottom: 0.5rem; display: inline-block;'
+                                };
+                            }
+                            if (align === 'right') {
+                                return {
+                                    style: 'float: right; margin-left: 1.5rem; margin-bottom: 0.5rem; display: inline-block;'
+                                };
+                            }
+                            return {
+                                style: 'margin-left: auto; margin-right: auto; display: block; clear: both;'
+                            };
+                        }
+                    }
+                };
+            },
+            addNodeView() {
+                return ({ node, HTMLAttributes, getPos, editor }) => {
+                    const container = document.createElement('div');
+                    container.className = 'tiptap-image-wrapper my-4 mx-auto';
+                    container.style.position = 'relative';
+                    container.style.display = 'block';
+                    container.style.width = node.attrs.width || 'fit-content';
+                    container.style.maxWidth = '100%';
+                    container.style.marginTop = '1rem';
+                    container.style.marginBottom = '1rem';
+                    
+                    const align = node.attrs.textAlign || 'center';
+                    if (align === 'left') {
+                        container.style.float = 'left';
+                        container.style.display = 'inline-block';
+                        container.style.marginLeft = '0';
+                        container.style.marginRight = '1.5rem';
+                        container.style.marginBottom = '0.5rem';
+                        container.style.clear = 'none';
+                    } else if (align === 'right') {
+                        container.style.float = 'right';
+                        container.style.display = 'inline-block';
+                        container.style.marginLeft = '1.5rem';
+                        container.style.marginRight = '0';
+                        container.style.marginBottom = '0.5rem';
+                        container.style.clear = 'none';
+                    } else {
+                        container.style.float = 'none';
+                        container.style.display = 'block';
+                        container.style.marginLeft = 'auto';
+                        container.style.marginRight = 'auto';
+                        container.style.marginBottom = '1rem';
+                        container.style.clear = 'both';
+                    }
+                    
+                    container.setAttribute('draggable', 'true');
+                    
+                    const img = document.createElement('img');
+                    Object.entries(HTMLAttributes).forEach(([key, value]) => {
+                        img.setAttribute(key, value);
+                    });
+                    img.setAttribute('draggable', 'false');
+                    
+                    img.className = 'rounded-lg max-w-full shadow-sm border border-gray-200 dark:border-slate-800 cursor-pointer block mx-auto';
+                    img.style.display = 'block';
+                    img.style.maxWidth = '100%';
+                    if (node.attrs.width) {
+                        img.style.width = node.attrs.width;
+                        container.style.width = node.attrs.width;
+                    } else {
+                        img.style.width = 'auto';
+                        container.style.width = 'fit-content';
+                    }
+                    container.appendChild(img);
+
+                    const handleConfigs = [
+                        { top: '4px', left: '4px', cursor: 'nwse-resize', factor: -1 },
+                        { top: '4px', right: '4px', cursor: 'nesw-resize', factor: 1 },
+                        { bottom: '4px', left: '4px', cursor: 'nesw-resize', factor: -1 },
+                        { bottom: '4px', right: '4px', cursor: 'nwse-resize', factor: 1 }
+                    ];
+
+                    const handleElements = [];
+
+                    if (editor.isEditable) {
+                        handleConfigs.forEach(config => {
+                            const handle = document.createElement('div');
+                            handle.className = 'tiptap-image-resizer-handle';
+                            handle.style.position = 'absolute';
+                            if (config.top) handle.style.top = config.top;
+                            if (config.bottom) handle.style.bottom = config.bottom;
+                            if (config.left) handle.style.left = config.left;
+                            if (config.right) handle.style.right = config.right;
+                            handle.style.width = '10px';
+                            handle.style.height = '10px';
+                            handle.style.backgroundColor = '#4f46e5';
+                            handle.style.border = '1px solid white';
+                            handle.style.borderRadius = '50%';
+                            handle.style.cursor = config.cursor;
+                            handle.style.zIndex = '10';
+                            handle.style.display = 'none';
+                            container.appendChild(handle);
+                            handleElements.push(handle);
+
+                            let startX, startWidth;
+
+                            const onMouseDown = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                startX = e.clientX;
+                                startWidth = img.offsetWidth;
+
+                                const onMouseMove = (moveEvent) => {
+                                    const currentX = moveEvent.clientX;
+                                    const deltaX = currentX - startX;
+                                    const newWidth = Math.max(50, startWidth + (deltaX * config.factor));
+                                    img.style.width = `${newWidth}px`;
+                                    container.style.width = `${newWidth}px`;
+                                };
+
+                                const onMouseUp = () => {
+                                    document.removeEventListener('mousemove', onMouseMove);
+                                    document.removeEventListener('mouseup', onMouseUp);
+
+                                    if (typeof getPos === 'function') {
+                                        const pos = getPos();
+                                        editor.commands.command(({ tr }) => {
+                                            tr.setNodeMarkup(pos, undefined, {
+                                                ...node.attrs,
+                                                width: `${img.offsetWidth}px`,
+                                            });
+                                            return true;
+                                        });
+                                    }
+                                };
+
+                                document.addEventListener('mousemove', onMouseMove);
+                                document.addEventListener('mouseup', onMouseUp);
+                            };
+
+                            handle.addEventListener('mousedown', onMouseDown);
+                        });
+                    }
+
+                    return {
+                        dom: container,
+                        stopEvent(event) {
+                            return false;
+                        },
+                        ignoreMutation(mutation) {
+                            return true;
+                        },
+                        selectNode() {
+                            img.style.outline = '2px solid #4f46e5';
+                            img.style.outlineOffset = '2px';
+                            if (editor.isEditable) {
+                                handleElements.forEach(el => el.style.display = 'block');
+                            }
+                        },
+                        deselectNode() {
+                            img.style.outline = 'none';
+                            if (editor.isEditable) {
+                                handleElements.forEach(el => el.style.display = 'none');
+                            }
+                        },
+                        update(updatedNode) {
+                            if (updatedNode.type !== node.type) return false;
+                            
+                            Object.entries(updatedNode.attrs).forEach(([key, value]) => {
+                                if (key !== 'width' && key !== 'textAlign' && value !== null) {
+                                    img.setAttribute(key, value);
+                                }
+                            });
+                            
+                            if (updatedNode.attrs.width) {
+                                img.style.width = updatedNode.attrs.width;
+                                container.style.width = updatedNode.attrs.width;
+                            } else {
+                                img.style.width = 'auto';
+                                container.style.width = 'fit-content';
+                            }
+
+                            const align = updatedNode.attrs.textAlign || 'center';
+                            if (align === 'left') {
+                                container.style.float = 'left';
+                                container.style.display = 'inline-block';
+                                container.style.marginLeft = '0';
+                                container.style.marginRight = '1.5rem';
+                                container.style.marginBottom = '0.5rem';
+                                container.style.clear = 'none';
+                            } else if (align === 'right') {
+                                container.style.float = 'right';
+                                container.style.display = 'inline-block';
+                                container.style.marginLeft = '1.5rem';
+                                container.style.marginRight = '0';
+                                container.style.marginBottom = '0.5rem';
+                                container.style.clear = 'none';
+                            } else {
+                                container.style.float = 'none';
+                                container.style.display = 'block';
+                                container.style.marginLeft = 'auto';
+                                container.style.marginRight = 'auto';
+                                container.style.marginBottom = '1rem';
+                                container.style.clear = 'both';
+                            }
+                            return true;
+                        }
+                    };
+                };
             }
         });
 
@@ -523,6 +824,7 @@
                 <textarea class="tiptap-code-view hidden w-full h-full min-h-[300px] border-0 p-4 outline-none resize-none font-mono text-sm bg-slate-900 text-slate-100 focus:ring-0 dark:bg-slate-950 dark:text-slate-200" style="flex: 1; min-height: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></textarea>
             </div>
             <input type="file" class="tiptap-file-upload hidden" accept="image/*">
+            <input type="file" class="tiptap-file-upload-multiple hidden" accept="image/*" multiple>
         `;
 
         // Insert container right after textarea
@@ -530,8 +832,10 @@
 
         const editorElement = container.querySelector('.tiptap-content');
         const fileInput = container.querySelector('.tiptap-file-upload');
+        const fileInputMultiple = container.querySelector('.tiptap-file-upload-multiple');
         const codeTextArea = container.querySelector('.tiptap-code-view');
         let codeViewActive = false;
+        let pendingUploadType = null;
 
         // Create the Tiptap Editor instance
         let editor;
@@ -551,7 +855,7 @@
                         },
                         underline: {}
                     }),
-                    Image.configure({
+                    ResizableImage.configure({
                         HTMLAttributes: {
                             class: 'rounded-lg max-w-full my-4 mx-auto block shadow-sm border border-gray-200 dark:border-slate-800'
                         }
@@ -577,7 +881,7 @@
                         placeholder: textarea.placeholder || 'Start typing post body content here...'
                     }),
                     TextAlign.configure({
-                        types: ['heading', 'paragraph'],
+                        types: ['heading', 'paragraph', 'image'],
                     }),
                     Highlight.configure({
                         multicolor: true
@@ -659,14 +963,12 @@
 
         // Store instance in the global registry
         window.tiptapInstances[id] = editor;
-
-        // Create or find image delete overlay button
         const wrapper = container.querySelector('.tiptap-content-wrapper');
         let deleteBtn = container.querySelector('.tiptap-image-delete-btn');
         if (!deleteBtn) {
             deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
-            deleteBtn.className = 'tiptap-image-delete-btn absolute bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all z-40 hidden duration-200 ease-out active:scale-95';
+            deleteBtn.className = 'tiptap-image-delete-btn absolute bg-red-650 hover:bg-red-700 text-white rounded-lg shadow-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all z-40 hidden duration-200 ease-out active:scale-95';
             deleteBtn.innerHTML = `
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 Remove Image
@@ -674,10 +976,74 @@
             wrapper.appendChild(deleteBtn);
         }
 
+        let ctaDeleteBtn = container.querySelector('.tiptap-cta-delete-btn');
+        if (!ctaDeleteBtn) {
+            ctaDeleteBtn = document.createElement('button');
+            ctaDeleteBtn.type = 'button';
+            ctaDeleteBtn.className = 'tiptap-cta-delete-btn absolute bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all z-40 hidden duration-200 ease-out active:scale-95';
+            ctaDeleteBtn.innerHTML = `
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Remove CTA Block
+            `;
+            wrapper.appendChild(ctaDeleteBtn);
+        }
+
+        let ctaButtonDeleteBtn = container.querySelector('.tiptap-cta-button-delete-btn');
+        if (!ctaButtonDeleteBtn) {
+            ctaButtonDeleteBtn = document.createElement('button');
+            ctaButtonDeleteBtn.type = 'button';
+            ctaButtonDeleteBtn.className = 'tiptap-cta-button-delete-btn absolute bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all z-40 hidden duration-200 ease-out active:scale-95';
+            ctaButtonDeleteBtn.innerHTML = `
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Remove Button
+            `;
+            wrapper.appendChild(ctaButtonDeleteBtn);
+        }
+
+        // Create or find slider helper toolbar
+        let sliderToolbar = container.querySelector('.tiptap-slider-toolbar');
+        if (!sliderToolbar) {
+            sliderToolbar = document.createElement('div');
+            sliderToolbar.className = 'tiptap-slider-toolbar absolute hidden z-40';
+            sliderToolbar.innerHTML = `
+                <button type="button" class="tiptap-slider-add-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Add Images
+                </button>
+                <span class="divider"></span>
+                <button type="button" class="tiptap-slider-delete-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Delete Slider
+                </button>
+            `;
+            wrapper.appendChild(sliderToolbar);
+        }
+
         let activeImage = null;
+        let activeSlider = null;
+        let activeCta = null;
+        let activeCtaButton = null;
+
+        function getNodeAndPosAtDOM(domElement) {
+            if (!domElement || !editor) return null;
+            try {
+                const parent = domElement.parentNode;
+                if (!parent) return null;
+                const index = Array.from(parent.childNodes).indexOf(domElement);
+                if (index === -1) return null;
+                const pos = editor.view.posAtDOM(parent, index);
+                if (pos === undefined) return null;
+                const node = editor.view.state.doc.nodeAt(pos);
+                return { pos, node };
+            } catch (e) {
+                console.error("Error getting node and pos at DOM:", e);
+                return null;
+            }
+        }
 
         function positionDeleteButton(img) {
             if (!img || !deleteBtn) return;
+            deleteBtn.classList.remove('hidden');
             const imgRect = img.getBoundingClientRect();
             const wrapperRect = wrapper.getBoundingClientRect();
             
@@ -686,7 +1052,6 @@
             
             deleteBtn.style.top = `${top}px`;
             deleteBtn.style.left = `${left}px`;
-            deleteBtn.classList.remove('hidden');
         }
 
         function hideDeleteButton() {
@@ -694,6 +1059,69 @@
                 deleteBtn.classList.add('hidden');
             }
             activeImage = null;
+        }
+
+        // Slider position helper
+        function positionSliderToolbar(slider) {
+            if (!slider || !sliderToolbar) return;
+            sliderToolbar.classList.remove('hidden');
+            const sliderRect = slider.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+            
+            const top = sliderRect.top - wrapperRect.top + wrapper.scrollTop + 8;
+            const left = sliderRect.left - wrapperRect.left + wrapper.scrollLeft + 8;
+            
+            sliderToolbar.style.top = `${top}px`;
+            sliderToolbar.style.left = `${left}px`;
+        }
+
+        function hideSliderToolbar() {
+            if (sliderToolbar) {
+                sliderToolbar.classList.add('hidden');
+            }
+            activeSlider = null;
+        }
+
+        // CTA position helper
+        function positionCtaDeleteButton(cta) {
+            if (!cta || !ctaDeleteBtn) return;
+            ctaDeleteBtn.classList.remove('hidden');
+            const rect = cta.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+            
+            const top = rect.top - wrapperRect.top + wrapper.scrollTop + 8;
+            const left = rect.left - wrapperRect.left + wrapper.scrollLeft + rect.width - ctaDeleteBtn.offsetWidth - 12;
+            
+            ctaDeleteBtn.style.top = `${top}px`;
+            ctaDeleteBtn.style.left = `${left}px`;
+        }
+
+        function hideCtaDeleteButton() {
+            if (ctaDeleteBtn) {
+                ctaDeleteBtn.classList.add('hidden');
+            }
+            activeCta = null;
+        }
+
+        // CTA Button position helper
+        function positionCtaButtonDeleteButton(btn) {
+            if (!btn || !ctaButtonDeleteBtn) return;
+            ctaButtonDeleteBtn.classList.remove('hidden');
+            const rect = btn.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+            
+            const top = rect.top - wrapperRect.top + wrapper.scrollTop - 36;
+            const left = rect.left - wrapperRect.left + wrapper.scrollLeft + (rect.width - ctaButtonDeleteBtn.offsetWidth) / 2;
+            
+            ctaButtonDeleteBtn.style.top = `${top}px`;
+            ctaButtonDeleteBtn.style.left = `${left}px`;
+        }
+
+        function hideCtaButtonDeleteButton() {
+            if (ctaButtonDeleteBtn) {
+                ctaButtonDeleteBtn.classList.add('hidden');
+            }
+            activeCtaButton = null;
         }
 
         function uploadImageAndInsert(view, file, pos) {
@@ -736,11 +1164,80 @@
             e.preventDefault();
             e.stopPropagation();
             if (activeImage && editor) {
-                const pos = editor.view.posAtDOM(activeImage, 0);
-                if (pos !== undefined) {
-                    editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                const wrapperNode = activeImage.closest('.tiptap-image-wrapper');
+                const targetDom = wrapperNode || activeImage;
+                const info = getNodeAndPosAtDOM(targetDom);
+                if (info && info.pos !== undefined && info.node) {
+                    editor.chain().focus().deleteRange({ from: info.pos, to: info.pos + info.node.nodeSize }).run();
+                } else {
+                    const pos = editor.view.posAtDOM(activeImage, 0);
+                    if (pos !== undefined) {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                    }
                 }
                 hideDeleteButton();
+            }
+        });
+
+        ctaDeleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeCta && editor) {
+                const info = getNodeAndPosAtDOM(activeCta);
+                if (info && info.pos !== undefined && info.node) {
+                    editor.chain().focus().deleteRange({ from: info.pos, to: info.pos + info.node.nodeSize }).run();
+                } else {
+                    const pos = editor.view.posAtDOM(activeCta, 0);
+                    const node = editor.view.state.doc.nodeAt(pos);
+                    if (pos !== undefined && node) {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
+                    }
+                }
+                hideCtaDeleteButton();
+            }
+        });
+
+        ctaButtonDeleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeCtaButton && editor) {
+                const info = getNodeAndPosAtDOM(activeCtaButton);
+                if (info && info.pos !== undefined && info.node) {
+                    editor.chain().focus().deleteRange({ from: info.pos, to: info.pos + info.node.nodeSize }).run();
+                } else {
+                    const pos = editor.view.posAtDOM(activeCtaButton, 0);
+                    if (pos !== undefined) {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                    }
+                }
+                hideCtaButtonDeleteButton();
+            }
+        });
+
+        sliderToolbar.querySelector('.tiptap-slider-add-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeSlider && editor) {
+                pendingUploadType = 'append-to-slider';
+                fileInputMultiple.click();
+            }
+        });
+
+        sliderToolbar.querySelector('.tiptap-slider-delete-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeSlider && editor) {
+                const info = getNodeAndPosAtDOM(activeSlider);
+                if (info && info.pos !== undefined && info.node) {
+                    editor.chain().focus().deleteRange({ from: info.pos, to: info.pos + info.node.nodeSize }).run();
+                } else {
+                    const pos = editor.view.posAtDOM(activeSlider, 0);
+                    const node = editor.view.state.doc.nodeAt(pos);
+                    if (node) {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
+                    }
+                }
+                hideSliderToolbar();
             }
         });
 
@@ -748,24 +1245,46 @@
             if (activeImage) {
                 positionDeleteButton(activeImage);
             }
+            if (activeSlider) {
+                positionSliderToolbar(activeSlider);
+            }
+            if (activeCta) {
+                positionCtaDeleteButton(activeCta);
+            }
+            if (activeCtaButton) {
+                positionCtaButtonDeleteButton(activeCtaButton);
+            }
         });
 
         editor.on('blur', () => {
             setTimeout(() => {
-                if (document.activeElement !== deleteBtn && !deleteBtn.contains(document.activeElement)) {
+                if (document.activeElement !== deleteBtn && !deleteBtn.contains(document.activeElement) &&
+                    document.activeElement !== sliderToolbar && !sliderToolbar.contains(document.activeElement) &&
+                    document.activeElement !== ctaDeleteBtn && !ctaDeleteBtn.contains(document.activeElement) &&
+                    document.activeElement !== ctaButtonDeleteBtn && !ctaButtonDeleteBtn.contains(document.activeElement)) {
                     hideDeleteButton();
+                    hideSliderToolbar();
+                    hideCtaDeleteButton();
+                    hideCtaButtonDeleteButton();
                 }
             }, 150);
         });
 
         editor.on('update', () => {
             hideDeleteButton();
+            hideSliderToolbar();
+            hideCtaDeleteButton();
+            hideCtaButtonDeleteButton();
         });
 
         // Auto-focus editor when clicking anywhere on the content area
         editorElement.addEventListener('click', (e) => {
             if (codeViewActive) return;
             const img = e.target.closest('img');
+            const slider = e.target.closest('.post-slider');
+            const cta = e.target.closest('.post-cta');
+            const ctaBtn = e.target.closest('.cta-button');
+
             if (img && editorElement.contains(img)) {
                 activeImage = img;
                 setTimeout(() => {
@@ -776,8 +1295,37 @@
                     hideDeleteButton();
                 }
             }
-            if (e.target === editorElement || e.target.classList.contains('ProseMirror')) {
-                editor.commands.focus();
+
+            if (slider && editorElement.contains(slider)) {
+                activeSlider = slider;
+                setTimeout(() => {
+                    positionSliderToolbar(slider);
+                }, 10);
+            } else {
+                if (!e.target.closest('.tiptap-slider-toolbar')) {
+                    hideSliderToolbar();
+                }
+            }
+
+            if (ctaBtn && editorElement.contains(ctaBtn)) {
+                activeCtaButton = ctaBtn;
+                hideCtaDeleteButton();
+                setTimeout(() => {
+                    positionCtaButtonDeleteButton(ctaBtn);
+                }, 10);
+            } else if (cta && editorElement.contains(cta)) {
+                activeCta = cta;
+                hideCtaButtonDeleteButton();
+                setTimeout(() => {
+                    positionCtaDeleteButton(cta);
+                }, 10);
+            } else {
+                if (!e.target.closest('.tiptap-cta-delete-btn')) {
+                    hideCtaDeleteButton();
+                }
+                if (!e.target.closest('.tiptap-cta-button-delete-btn')) {
+                    hideCtaButtonDeleteButton();
+                }
             }
         });
 
@@ -922,94 +1470,19 @@
                     }
                 }
                 else if (cmd === 'insertSlider') {
-                    if (window.openMediaPicker) {
-                        const urls = [];
-                        const modal = document.querySelector('[x-data="mediaPicker()"]');
-                        
-                        const getNextImage = () => {
-                            let selectedThisTurn = false;
-                            let observer = null;
-                            
-                            if (modal) {
-                                observer = new MutationObserver(() => {
-                                    if (modal.style.display === 'none') {
-                                        observer.disconnect();
-                                        // Wait a moment for Alpine.js/DOM to settle
-                                        setTimeout(() => {
-                                            if (!selectedThisTurn) {
-                                                insertCollectedSlider();
-                                            }
-                                        }, 100);
-                                    }
-                                });
-                                observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
-                            }
-                            
-                            window.openMediaPicker(function(url, meta) {
-                                selectedThisTurn = true;
-                                if (observer) observer.disconnect();
-                                
-                                if (window.registerAndLogImageDetails) {
-                                    window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
-                                }
-                                urls.push({ url: url, alt: meta.alt || '' });
-                                
-                                setTimeout(() => {
-                                    if (confirm('Image added! Would you like to select another image to this slider?')) {
-                                        getNextImage();
-                                    } else {
-                                        insertCollectedSlider();
-                                    }
-                                }, 250);
-                            });
-                        };
-                        
-                        const insertCollectedSlider = () => {
-                            if (urls.length === 0) return;
-                            let imagesHtml = '';
-                            urls.forEach(item => {
-                                imagesHtml += '  <p><img src="' + item.url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" alt="' + item.alt + '" /></p>';
-                            });
-                            editor.chain().focus().insertContent(
-                                '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
-                                imagesHtml +
-                                '</div><p></p>'
-                            ).run();
-                        };
-                        
-                        getNextImage();
-                    } else {
-                        const url = window.prompt('Enter Image URL to start slider:');
-                        if (url) {
-                            editor.chain().focus().insertContent(
-                                '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
-                                '  <p><img src="' + url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>' +
-                                '</div><p></p>'
-                            ).run();
-                        }
-                    }
+                    if (codeViewActive) return;
+                    pendingUploadType = 'slider';
+                    fileInputMultiple.click();
                 }
                 else if (cmd === 'insertImageLeft') {
-                    editor.chain().focus().insertContent(
-                        '<div class="image-split">' +
-                        '  <p><img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800" alt="Coding" /></p>' +
-                        '  <div>' +
-                        '    <h3>Topic Title</h3>' +
-                        '    <p>Replace this text with your actual content. The image and text will display side-by-side on desktop and stack vertically on mobile screens.</p>' +
-                        '  </div>' +
-                        '</div><p></p>'
-                    ).run();
+                    if (codeViewActive) return;
+                    pendingUploadType = 'split-left';
+                    fileInput.click();
                 }
                 else if (cmd === 'insertImageRight') {
-                    editor.chain().focus().insertContent(
-                        '<div class="image-split image-right">' +
-                        '  <p><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800" alt="Data" /></p>' +
-                        '  <div>' +
-                        '    <h3>Topic Title</h3>' +
-                        '    <p>Replace this text with your actual content. The image will appear on the right side of the text on desktop screens.</p>' +
-                        '  </div>' +
-                        '</div><p></p>'
-                    ).run();
+                    if (codeViewActive) return;
+                    pendingUploadType = 'split-right';
+                    fileInput.click();
                 }
                 else if (cmd === 'insertCTA') {
                     editor.chain().focus().insertContent(
@@ -1171,6 +1644,8 @@
                 e.preventDefault();
                 if (codeViewActive) return;
                 closeAllDropdowns();
+                pendingUploadType = 'single';
+                fileInput.multiple = false;
                 fileInput.click();
             });
         }
@@ -1196,51 +1671,131 @@
             });
         }
 
-        // Asynchronous image uploader
-        fileInput.addEventListener('change', (e) => {
+        function handleFileSelection(e) {
             if (codeViewActive) return;
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
-            if (window.registerAndLogImageFile) {
-                window.registerAndLogImageFile(file);
-            }
+            const uploadPromises = files.map(file => {
+                if (window.registerAndLogImageFile) {
+                    window.registerAndLogImageFile(file);
+                }
 
-            const formData = new FormData();
-            formData.append('file', file);
+                const formData = new FormData();
+                formData.append('file', file);
 
-            // Temporarily insert a uploading placeholder or show a prompt
+                return fetch('{{ route('admin.media.json-upload', [], false) }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Upload failed for ' + file.name);
+                    return res.json();
+                });
+            });
+
             const notification = document.createElement('div');
             notification.className = 'fixed bottom-5 right-5 bg-indigo-650 text-white px-4 py-2 rounded-lg shadow-lg text-xs z-[9999] flex items-center gap-2 animate-bounce';
-            notification.innerHTML = '<span>⏳</span> Uploading image...';
+            notification.innerHTML = `<span>⏳</span> Uploading ${files.length} image(s)...`;
             document.body.appendChild(notification);
 
-            fetch('{{ route('admin.media.json-upload', [], false) }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: formData
-            })
-            .then(res => {
+            Promise.all(uploadPromises)
+            .then(results => {
                 notification.remove();
-                if (!res.ok) throw new Error('Network error during upload');
-                return res.json();
-            })
-            .then(data => {
-                if (data && data.location) {
-                    editor.chain().focus().setImage({ src: data.location, alt: file.name }).run();
-                } else {
-                    alert('Invalid response from server.');
+                
+                const uploadedUrls = results.map((data, idx) => ({
+                    url: data.location,
+                    alt: files[idx].name
+                })).filter(item => !!item.url);
+
+                if (uploadedUrls.length === 0) {
+                    alert('No images uploaded successfully.');
+                    return;
                 }
+
+                if (pendingUploadType === 'slider') {
+                    let imagesHtml = '';
+                    uploadedUrls.forEach(item => {
+                        imagesHtml += '  <p><img src="' + item.url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" alt="' + item.alt + '" /></p>';
+                    });
+                    editor.chain().focus().insertContent(
+                        '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
+                        imagesHtml +
+                        '</div><p></p>'
+                    ).run();
+                } else if (pendingUploadType === 'append-to-slider') {
+                    if (activeSlider) {
+                        let newImagesHtml = '';
+                        uploadedUrls.forEach(item => {
+                            newImagesHtml += '  <p><img src="' + item.url + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" alt="' + item.alt + '" /></p>';
+                        });
+
+                        // Get all existing img elements inside activeSlider
+                        const imgs = Array.from(activeSlider.querySelectorAll('img'));
+                        let oldImagesHtml = '';
+                        imgs.forEach(img => {
+                            oldImagesHtml += '  <p><img src="' + img.getAttribute('src') + '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" alt="' + (img.getAttribute('alt') || '') + '" /></p>';
+                        });
+
+                        const updatedSliderHtml = '<div class="post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start">' +
+                            oldImagesHtml +
+                            newImagesHtml +
+                            '</div>';
+
+                        const pos = editor.view.posAtDOM(activeSlider, 0);
+                        const node = editor.view.state.doc.nodeAt(pos);
+                        if (node) {
+                            editor.chain().focus().insertContentAt({ from: pos, to: pos + node.nodeSize }, updatedSliderHtml).run();
+                        }
+                    }
+                } else if (pendingUploadType === 'split-left' || pendingUploadType === 'split-right') {
+                    const blockType = pendingUploadType;
+                    const data = results[0];
+                    
+                    const title = 'Topic Title';
+                    const description = 'Replace this text with your actual content.';
+                    const escapedTitle = title.replace(/"/g, '&quot;');
+                    const rightClass = blockType === 'split-right' ? ' image-right' : '';
+                    
+                    editor.chain().focus().insertContent(
+                        '<div class="image-split' + rightClass + '">' +
+                        '  <p><img src="' + data.location + '" alt="' + escapedTitle + '" /></p>' +
+                        '  <div>' +
+                        '    <h3>' + title + '</h3>' +
+                        '    <p>' + description + '</p>' +
+                        '  </div>' +
+                        '</div><p></p>'
+                    ).run();
+                } else {
+                    const data = results[0];
+                    const file = files[0];
+                    editor.chain().focus().setImage({ src: data.location, alt: file.name }).run();
+                }
+                
+                pendingUploadType = null;
             })
             .catch(err => {
                 notification.remove();
+                pendingUploadType = null;
                 alert('Upload failed: ' + err.message);
             });
 
             // Reset file input
-            fileInput.value = '';
+            e.target.value = '';
+        }
+
+        // Asynchronous image uploader
+        fileInput.addEventListener('change', handleFileSelection);
+        fileInputMultiple.addEventListener('change', handleFileSelection);
+
+        fileInput.addEventListener('cancel', () => {
+            pendingUploadType = null;
+        });
+        fileInputMultiple.addEventListener('cancel', () => {
+            pendingUploadType = null;
         });
 
         // Run initial check for CTA visibility

@@ -36,8 +36,91 @@
     };
 @endphp
 
+<style>
+    /* Prevent Tailwind Typography (.prose) from overriding CTA Banner and CTA Directory styles */
+    section.not-prose h2,
+    .prose section.not-prose h2 {
+        color: #ffffff !important;
+        border-left: none !important;
+        padding-left: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        font-weight: 800 !important;
+    }
+    section.not-prose p,
+    .prose section.not-prose p {
+        color: #e2e8f0 !important; /* text-gray-200 */
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    section.not-prose a,
+    .prose section.not-prose a {
+        text-decoration: none !important;
+    }
+    section.not-prose a.inline-block,
+    .prose section.not-prose a.inline-block {
+        color: #ffffff !important;
+    }
+    section.not-prose h3,
+    .prose section.not-prose h3 {
+        color: #005691 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.5rem !important;
+        font-weight: 800 !important;
+    }
+    .dark section.not-prose h3,
+    .dark .prose section.not-prose h3 {
+        color: #38bdf8 !important;
+    }
+    section.not-prose h4,
+    .prose section.not-prose h4 {
+        color: #111827 !important; /* text-gray-900 */
+        margin-top: 0 !important;
+        margin-bottom: 1.25rem !important;
+        border-bottom: 1px solid #f3f4f6 !important;
+        font-weight: 700 !important;
+    }
+    .dark section.not-prose h4,
+    .dark .prose section.not-prose h4 {
+        color: #ffffff !important;
+        border-bottom-color: #1e293b !important;
+    }
+    section.not-prose ul,
+    .prose section.not-prose ul {
+        list-style-type: none !important;
+        padding-left: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    section.not-prose li,
+    .prose section.not-prose li {
+        list-style-type: none !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.875rem !important;
+        padding-left: 0 !important;
+    }
+    section.not-prose li a,
+    .prose section.not-prose li a {
+        color: #0369a1 !important; /* text-sky-700 */
+        text-decoration: none !important;
+    }
+    section.not-prose li a:hover,
+    .prose section.not-prose li a:hover {
+        color: #0c4a6e !important; /* text-sky-900 */
+        text-decoration: underline !important;
+    }
+    .dark section.not-prose li a,
+    .dark .prose section.not-prose li a {
+        color: #38bdf8 !important; /* text-sky-400 */
+    }
+    .dark section.not-prose li a:hover,
+    .dark .prose section.not-prose li a:hover {
+        color: #7dd3fc !important; /* text-sky-300 */
+    }
+</style>
+
 @if($hasCustomCta && $cta)
-    <section class="w-full">
+    <section class="w-full not-prose">
         {{-- Custom CTA Banner --}}
         @php
             $bgImage = $cta->cta_bg_image 
@@ -57,7 +140,7 @@
                 @endif
                 @if($cta->cta_button_text && $cta->cta_button_link)
                     <div class="pt-4">
-                        <a href="{{ $cta->cta_button_link }}" class="inline-block bg-[#0070ba] hover:bg-[#005c9c] text-white font-bold text-sm sm:text-base px-8 py-3 rounded-full shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                        <a href="{{ $cta->cta_button_link }}" class="inline-block bg-[#0070ba] hover:bg-[#005c9c] !text-white !no-underline font-bold text-sm sm:text-base px-8 py-3 rounded-full shadow-md transition-all duration-200 hover:-translate-y-0.5">
                             {{ $cta->cta_button_text }}
                         </a>
                     </div>

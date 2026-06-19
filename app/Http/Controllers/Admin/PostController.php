@@ -100,7 +100,7 @@ class PostController extends Controller
         $post = Post::create($validated);
         $post->tags()->sync($request->tags ?? []);
 
-        $this->clearPostCaches();
+        $this->clearPostCaches($post);
 
         return redirect()->route('admin.posts.index')
             ->with('success', 'Post created successfully!');

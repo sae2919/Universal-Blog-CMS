@@ -4,7 +4,7 @@
 @section('header', 'Edit Post')
 
 @section('content')
-<div class="max-w-6xl mx-auto space-y-6">
+<div class="max-w-[96%] mx-auto space-y-6">
     <div class="flex items-center gap-4">
         <a href="{{ route('admin.posts.index') }}" class="text-gray-500 hover:text-gray-900 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,13 +14,254 @@
         <h2 class="text-xl font-bold text-gray-800">Edit Article — {{ $post->title }}</h2>
     </div>
 
-    <form action="{{ route('admin.posts.update', $post->id) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {{-- Unsaved Draft Warning Banner --}}
+    <div id="draft-banner-container" class="hidden max-w-[96%] mx-auto">
+        <div class="bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-150 dark:border-indigo-900 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm backdrop-blur-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📝</span>
+                <div>
+                    <h4 class="text-xs font-bold text-gray-800 dark:text-slate-100">Unsaved Draft Found</h4>
+                    <p class="text-[10px] text-gray-500 dark:text-slate-400 mt-0.5">We found an unsaved draft of this article from your last session. Would you like to restore it?</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button type="button" id="restore-draft-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer">
+                    Restore Draft
+                </button>
+                <button type="button" id="dismiss-draft-btn" class="px-3 py-1.5 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-350 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg text-[10px] font-bold transition-all cursor-pointer">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <form action="{{ route('admin.posts.update', $post->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
         <input type="hidden" name="image_metadata" id="image_metadata_input">
 
         {{-- Left Column (Post content, Body, SEO) --}}
-        <div class="lg:col-span-2 space-y-6">
+        <div class="space-y-6 w-full">
+            @if ($errors->any())
+                <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 text-xs shadow-sm">
+                    <div class="font-bold flex items-center gap-1.5 mb-1.5 text-red-800 dark:text-red-400">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Please fix the following validation errors:
+                    </div>
+                    <ul class="list-disc pl-5 space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            {{-- AI Copilot Widget --}}
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl border border-indigo-150 dark:border-indigo-900 shadow-sm p-5 space-y-4"
+                 x-data="{ 
+                     aiPrompt: '', 
+                     loading: false,
+                     targetLang: 'hi',
+                     generateAll() {
+                         const titleVal = document.getElementById('title').value;
+                         const excerptVal = document.getElementById('excerpt').value;
+                         const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
+                             ? window.tiptapInstances['content'].getHTML() 
+                             : document.getElementById('content').value;
+                         
+                         const promptVal = this.aiPrompt;
+                         
+                         if (!promptVal && !titleVal && !excerptVal && !contentVal) {
+                             alert('Please enter a Title, Excerpt, Content or AI Prompt first!');
+                             return;
+                         }
+
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.generate-article') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ 
+                                 title: titleVal || promptVal, 
+                                 excerpt: excerptVal, 
+                                 content: contentVal 
+                             })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if(data.success) {
+                                 if (data.title) document.getElementById('title').value = data.title;
+                                 if (data.excerpt) document.getElementById('excerpt').value = data.excerpt;
+                                 if (data.meta_title) document.getElementById('meta_title').value = data.meta_title;
+                                 if (data.seo_description) document.getElementById('meta_description').value = data.seo_description;
+                                 if (data.keywords) document.getElementById('meta_keywords').value = data.keywords;
+                                 
+                                 if (data.content) {
+                                     const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                     if (contentEditor) {
+                                         contentEditor.commands.setContent(data.content);
+                                     } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
+                                         tinymce.get('content').setContent(data.content);
+                                     } else {
+                                         document.getElementById('content').value = data.content;
+                                     }
+                                 }
+
+                                 if (data.faqs && data.faqs.length > 0) {
+                                     const faqContainer = document.getElementById('faq-container');
+                                     if (faqContainer) {
+                                         const rows = faqContainer.querySelectorAll('.faq-row');
+                                         rows.forEach(row => {
+                                             const textarea = row.querySelector('textarea');
+                                             if (textarea && textarea.id && window.tiptapInstances && window.tiptapInstances[textarea.id]) {
+                                                 window.tiptapInstances[textarea.id].destroy();
+                                                 delete window.tiptapInstances[textarea.id];
+                                             }
+                                             row.remove();
+                                         });
+                                         data.faqs.forEach(faq => {
+                                             if (window.addFaqRow) {
+                                                 window.addFaqRow(faq.question, faq.answer);
+                                             }
+                                         });
+                                     }
+                                 }
+
+                                 alert('AI completion successfully finished!');
+                             } else {
+                                 alert(data.message || 'Failed to auto-complete fields.');
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to contact AI Assistant.'); });
+                     },
+                     correctGrammar() {
+                         const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
+                             ? window.tiptapInstances['content'].getHTML() 
+                             : document.getElementById('content').value;
+                         if(!contentVal || contentVal.length < 10) { alert('Write some content first to correct grammar!'); return; }
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.correct-grammar') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ content: contentVal })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if(data.success && data.corrected_content) {
+                                 const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                 if (contentEditor) {
+                                     contentEditor.commands.setContent(data.corrected_content);
+                                 } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
+                                     tinymce.get('content').setContent(data.corrected_content);
+                                 } else {
+                                     document.getElementById('content').value = data.corrected_content;
+                                 }
+                                 alert('Spelling and grammar successfully corrected!');
+                             } else {
+                                 alert('Failed to correct spelling and grammar.');
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to auto-correct grammar.'); });
+                     },
+                     translatePost() {
+                         const title = document.getElementById('title').value;
+                         const excerpt = document.getElementById('excerpt').value;
+                         const content = window.tiptapInstances && window.tiptapInstances['content'] 
+                             ? window.tiptapInstances['content'].getHTML() 
+                             : document.getElementById('content').value;
+                         const metaTitle = document.getElementById('meta_title').value;
+                         const metaDescription = document.getElementById('meta_description').value;
+
+                         if (!title || !content) {
+                             alert('Please write or generate some content first before translating!');
+                             return;
+                         }
+
+                         this.loading = true;
+                         fetch('{{ route('admin.ai.translate-post') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({
+                                 title: title,
+                                 excerpt: excerpt,
+                                 content: content,
+                                 meta_title: metaTitle,
+                                 meta_description: metaDescription,
+                                 target_lang: this.targetLang
+                             })
+                         })
+                         .then(res => res.json())
+                         .then(data => {
+                             this.loading = false;
+                             if (data.success) {
+                                 document.getElementById('title').value = data.title;
+                                 document.getElementById('excerpt').value = data.excerpt;
+                                 document.getElementById('meta_title').value = data.meta_title;
+                                 document.getElementById('meta_description').value = data.meta_description;
+                                 
+                                 const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
+                                 if (contentEditor) {
+                                     contentEditor.commands.setContent(data.content);
+                                 } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
+                                     tinymce.get('content').setContent(data.content);
+                                 } else {
+                                     document.getElementById('content').value = data.content;
+                                 }
+
+                                 document.getElementById('locale').value = this.targetLang;
+                                 alert('Article successfully translated via AI and filled in form fields!');
+                             } else {
+                                 alert(data.message || 'Failed to translate content.');
+                             }
+                         })
+                         .catch(() => { this.loading = false; alert('Failed to translate content.'); });
+                     }
+                 }">
+                <div class="flex items-center justify-between border-b border-indigo-100 dark:border-indigo-900 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">✨</span>
+                        <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm">AI Copilot</h3>
+                    </div>
+                    <div x-show="loading" class="flex items-center gap-2" style="display: none;">
+                        <svg class="animate-spin h-3.5 w-3.5 text-indigo-650" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-[10px] font-semibold text-gray-500">AI is processing request...</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="w-full">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">AI Prompt / Topic Title</label>
+                        <input x-model="aiPrompt" type="text" placeholder="Topic details or leave blank to use title..."
+                               class="mt-1 block w-full rounded-lg border-indigo-200 dark:border-indigo-900 dark:bg-slate-700 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button type="button" @click="generateAll()" :disabled="loading"
+                                class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 whitespace-nowrap">
+                            Generate / Complete Fields & FAQs
+                        </button>
+                        
+                        <button type="button" @click="correctGrammar()" :disabled="loading"
+                                class="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 whitespace-nowrap">
+                            Auto-Correct Grammar & Spelling
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {{-- Main Form Fields --}}
             <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6">
                 <div>
@@ -68,29 +309,34 @@
                     @endphp
                     @if(is_array($faqs))
                         @foreach($faqs as $index => $faq)
-                            <div class="faq-row bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 relative space-y-3" data-index="{{ $index }}">
-                                <button type="button" class="remove-faq-btn absolute top-3 right-3 text-gray-400 hover:text-red-650 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Question</label>
-                                    <input type="text" name="faqs[{{ $index }}][question]" value="{{ $faq['question'] ?? '' }}" required
-                                           class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                                    @error("faqs.{$index}.question")
-                                        <p class="mt-1 text-xs text-red-650">{{ $message }}</p>
-                                    @enderror
+                            <div class="faq-row bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 relative flex items-start justify-between gap-4 group hover:border-indigo-150 transition-all" data-index="{{ $index }}">
+                                <input type="hidden" name="faqs[{{ $index }}][question]" class="faq-question-input" value="{{ $faq['question'] ?? '' }}">
+                                <input type="hidden" name="faqs[{{ $index }}][answer]" class="faq-answer-input" value="{{ $faq['answer'] ?? '' }}">
+                                
+                                <div class="space-y-1.5 flex-1 min-w-0 pr-8">
+                                    <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 faq-question-preview truncate">{{ $faq['question'] ?? '' }}</h4>
+                                    <div class="text-xs text-gray-500 dark:text-slate-400 faq-answer-preview line-clamp-2 prose prose-sm dark:prose-invert max-w-none">{!! $faq['answer'] ?? '' !!}</div>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Answer (Rich Text)</label>
-                                    <textarea id="faq-answer-{{ $index }}" name="faqs[{{ $index }}][answer]" rows="3"
-                                              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ $faq['answer'] ?? '' }}</textarea>
-                                    @error("faqs.{$index}.answer")
-                                        <p class="mt-1 text-xs text-red-650">{{ $message }}</p>
-                                    @enderror
+                                
+                                <div class="flex items-center gap-2 select-none">
+                                    <button type="button" class="edit-faq-btn text-gray-400 hover:text-indigo-650 transition-colors p-1.5 hover:bg-gray-150 dark:hover:bg-slate-700 rounded-lg" title="Edit FAQ">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                    <button type="button" class="remove-faq-btn text-gray-400 hover:text-red-650 transition-colors p-1.5 hover:bg-gray-150 dark:hover:bg-slate-700 rounded-lg" title="Remove FAQ">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
                                 </div>
                             </div>
                         @endforeach
                     @endif
+                </div>
+
+                {{-- Bottom Add FAQ button --}}
+                <div class="pt-2 flex justify-start {{ is_array($faqs) && count($faqs) > 0 ? '' : 'hidden' }}" id="add-faq-btn-bottom-container">
+                    <button type="button" id="add-faq-btn-bottom" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 font-semibold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add FAQ
+                    </button>
                 </div>
 
                 <div id="faq-empty-state" class="text-center py-6 text-gray-400 {{ is_array($faqs) && count($faqs) > 0 ? 'hidden' : '' }}">
@@ -237,214 +483,9 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Right Column (Taxonomy, Image, Publishing) --}}
-        <div class="space-y-6">
-            {{-- AI Copilot Widget --}}
-            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl border border-indigo-150 dark:border-indigo-900 shadow-sm p-6 space-y-4"
-                 x-data="{ 
-                     aiPrompt: '', 
-                     loading: false,
-                     targetLang: 'hi',
-                     generateAll() {
-                          const titleVal = document.getElementById('title').value;
-                          const excerptVal = document.getElementById('excerpt').value;
-                          const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
-                              ? window.tiptapInstances['content'].getHTML() 
-                              : document.getElementById('content').value;
-                          
-                          const promptVal = this.aiPrompt;
-                          
-                          if (!promptVal && !titleVal && !excerptVal && !contentVal) {
-                              alert('Please enter a Title, Excerpt, Content or AI Prompt first!');
-                              return;
-                          }
-
-                          this.loading = true;
-                          fetch('{{ route('admin.ai.generate-article') }}', {
-                              method: 'POST',
-                              headers: {
-                                  'Content-Type': 'application/json',
-                                  'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                              },
-                              body: JSON.stringify({ 
-                                  title: titleVal || promptVal, 
-                                  excerpt: excerptVal, 
-                                  content: contentVal 
-                              })
-                          })
-                          .then(res => res.json())
-                          .then(data => {
-                              this.loading = false;
-                              if(data.success) {
-                                  if (data.title) document.getElementById('title').value = data.title;
-                                  if (data.excerpt) document.getElementById('excerpt').value = data.excerpt;
-                                  if (data.title) document.getElementById('meta_title').value = data.title;
-                                  if (data.seo_description) document.getElementById('meta_description').value = data.seo_description;
-                                  if (data.keywords) document.getElementById('meta_keywords').value = data.keywords;
-                                  
-                                  if (data.content) {
-                                      const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
-                                      if (contentEditor) {
-                                          contentEditor.commands.setContent(data.content);
-                                      } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
-                                          tinymce.get('content').setContent(data.content);
-                                      } else {
-                                          document.getElementById('content').value = data.content;
-                                      }
-                                  }
-
-                                  if (data.faqs && data.faqs.length > 0) {
-                                      const faqContainer = document.getElementById('faq-container');
-                                      if (faqContainer) {
-                                          const rows = faqContainer.querySelectorAll('.faq-row');
-                                          rows.forEach(row => {
-                                              const textarea = row.querySelector('textarea');
-                                              if (textarea && textarea.id && window.tiptapInstances && window.tiptapInstances[textarea.id]) {
-                                                  window.tiptapInstances[textarea.id].destroy();
-                                                  delete window.tiptapInstances[textarea.id];
-                                              }
-                                              row.remove();
-                                          });
-                                          data.faqs.forEach(faq => {
-                                              if (window.addFaqRow) {
-                                                  window.addFaqRow(faq.question, faq.answer);
-                                              }
-                                          });
-                                      }
-                                  }
-
-                                  alert('AI completion successfully finished!');
-                              } else {
-                                  alert(data.message || 'Failed to auto-complete fields.');
-                              }
-                          })
-                          .catch(() => { this.loading = false; alert('Failed to contact AI Assistant.'); });
-                      },
-                      correctGrammar() {
-                          const contentVal = window.tiptapInstances && window.tiptapInstances['content'] 
-                              ? window.tiptapInstances['content'].getHTML() 
-                              : document.getElementById('content').value;
-                          if(!contentVal || contentVal.length < 10) { alert('Write some content first to correct grammar!'); return; }
-                          this.loading = true;
-                          fetch('{{ route('admin.ai.correct-grammar') }}', {
-                              method: 'POST',
-                              headers: {
-                                  'Content-Type': 'application/json',
-                                  'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                              },
-                              body: JSON.stringify({ content: contentVal })
-                          })
-                          .then(res => res.json())
-                          .then(data => {
-                              this.loading = false;
-                              if(data.success && data.corrected_content) {
-                                  const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
-                                  if (contentEditor) {
-                                      contentEditor.commands.setContent(data.corrected_content);
-                                  } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
-                                      tinymce.get('content').setContent(data.corrected_content);
-                                  } else {
-                                      document.getElementById('content').value = data.corrected_content;
-                                  }
-                                  alert('Spelling and grammar successfully corrected!');
-                              } else {
-                                  alert('Failed to correct spelling and grammar.');
-                              }
-                          })
-                          .catch(() => { this.loading = false; alert('Failed to auto-correct grammar.'); });
-                      },
-                     translatePost() {
-                         const title = document.getElementById('title').value;
-                         const excerpt = document.getElementById('excerpt').value;
-                         const content = window.tiptapInstances && window.tiptapInstances['content'] 
-                             ? window.tiptapInstances['content'].getHTML() 
-                             : document.getElementById('content').value;
-                         const metaTitle = document.getElementById('meta_title').value;
-                         const metaDescription = document.getElementById('meta_description').value;
-
-                         if (!title || !content) {
-                             alert('Please write or generate some content first before translating!');
-                             return;
-                         }
-
-                         this.loading = true;
-                         fetch('{{ route('admin.ai.translate-post') }}', {
-                             method: 'POST',
-                             headers: {
-                                 'Content-Type': 'application/json',
-                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                             },
-                             body: JSON.stringify({
-                                 title: title,
-                                 excerpt: excerpt,
-                                 content: content,
-                                 meta_title: metaTitle,
-                                 meta_description: metaDescription,
-                                 target_lang: this.targetLang
-                             })
-                         })
-                         .then(res => res.json())
-                         .then(data => {
-                             this.loading = false;
-                             if (data.success) {
-                                 document.getElementById('title').value = data.title;
-                                 document.getElementById('excerpt').value = data.excerpt;
-                                 document.getElementById('meta_title').value = data.meta_title;
-                                 document.getElementById('meta_description').value = data.meta_description;
-                                 
-                                 const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
-                                 if (contentEditor) {
-                                     contentEditor.commands.setContent(data.content);
-                                 } else if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
-                                     tinymce.get('content').setContent(data.content);
-                                 } else {
-                                     document.getElementById('content').value = data.content;
-                                 }
-
-                                 document.getElementById('locale').value = this.targetLang;
-                                 alert('Article successfully translated via AI and filled in form fields!');
-                             } else {
-                                 alert(data.message || 'Failed to translate content.');
-                             }
-                         })
-                         .catch(() => { this.loading = false; alert('Failed to translate content.'); });
-                     }
-                 }">
-                <div class="flex items-center gap-2 border-b border-indigo-100 dark:border-indigo-900 pb-2">
-                    <span class="text-lg">✨</span>
-                    <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm">AI Copilot</h3>
-                </div>
-                
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">AI Prompt / Topic Title</label>
-                        <input x-model="aiPrompt" type="text" placeholder="Topic details or leave blank to use title..."
-                               class="mt-1 block w-full rounded-lg border-indigo-200 dark:border-indigo-900 dark:bg-slate-700 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-2 pt-1">
-                        <button type="button" @click="generateAll()" :disabled="loading"
-                                class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
-                            Generate / Complete Fields & FAQs
-                        </button>
-                        
-                        <button type="button" @click="correctGrammar()" :disabled="loading"
-                                class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50">
-                            Auto-Correct Grammar & Spelling
-                        </button>
-                    </div>
-                </div>
-                
-                <div x-show="loading" class="flex items-center justify-center gap-2 pt-1" style="display: none;">
-                    <svg class="animate-spin h-3.5 w-3.5 text-indigo-650" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span class="text-[10px] font-semibold text-gray-500">AI is processing request...</span>
-                </div>
-            </div>
+        {{-- Bottom Settings Grid --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
 
             {{-- Publish Widget --}}
             <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-6" x-data="{ status: '{{ old('status', $post->status) }}' }">
@@ -469,19 +510,19 @@
                 <div class="space-y-4 pt-4 border-t border-gray-100">
                     <label class="flex items-center gap-3">
                         <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $post->is_featured) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                               class="rounded border-gray-300 text-indigo-650 focus:ring-indigo-500">
                         <span class="text-sm font-medium text-gray-700">Feature this article</span>
                     </label>
 
                     <label class="flex items-center gap-3">
                         <input type="checkbox" name="is_trending" value="1" {{ old('is_trending', $post->is_trending) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                               class="rounded border-gray-300 text-indigo-650 focus:ring-indigo-500">
                         <span class="text-sm font-medium text-gray-700">Mark as Trending</span>
                     </label>
 
                     <label class="flex items-center gap-3">
                         <input type="checkbox" name="allow_comments" value="1" {{ old('allow_comments', $post->allow_comments) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                               class="rounded border-gray-300 text-indigo-650 focus:ring-indigo-500">
                         <span class="text-sm font-medium text-gray-700">Allow Comments</span>
                     </label>
                 </div>
@@ -511,7 +552,7 @@
                         @foreach($tags as $tag)
                             <label class="flex items-center gap-3">
                                 <input type="checkbox" name="tags[]" value="{{ $tag->id }}" {{ in_array($tag->id, old('tags', $postTags)) ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                       class="rounded border-gray-300 text-indigo-650 focus:ring-indigo-500">
                                 <span class="text-sm text-gray-700">#{{ $tag->name }}</span>
                             </label>
                         @endforeach
@@ -519,54 +560,51 @@
                 </div>
             </div>
 
-            {{-- Featured Image --}}
-            <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-4">
-                <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Media</h3>
+            {{-- Media & Actions (Column 4) --}}
+            <div class="space-y-6">
+                {{-- Featured Image --}}
+                <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 space-y-4">
+                    <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Media</h3>
 
-                <div>
-                    <label for="featured_image" class="block text-sm font-semibold text-gray-700">Featured Image</label>
-                    <div id="image-preview-container" x-data="{ hasImage: @json(!!$post->featured_image), removeImage: false }">
-                        @if($post->featured_image)
-                            <div class="mt-2 relative" x-show="hasImage && !removeImage">
-                                <img src="{{ asset('storage/' . $post->featured_image) }}" class="w-full h-32 object-cover rounded-lg border border-gray-200" alt="">
-                                <button type="button" @click="removeImage = true; document.getElementById('remove_featured_image').value = '1'" 
-                                        class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Image">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <input type="hidden" name="remove_featured_image" id="remove_featured_image" value="0">
-                            <div x-show="removeImage" class="mt-2 text-xs text-red-650 font-semibold" style="display: none;">
-                                Image will be removed upon saving.
-                                <button type="button" @click="removeImage = false; document.getElementById('remove_featured_image').value = '0'" class="text-indigo-600 hover:underline ml-2 cursor-pointer">Undo</button>
-                            </div>
-                        @endif
+                    <div>
+                        <label for="featured_image" class="block text-sm font-semibold text-gray-700">Featured Image</label>
+                        <div id="image-preview-container" x-data="{ hasImage: @json(!!$post->featured_image), removeImage: false }">
+                            @if($post->featured_image)
+                                <div class="mt-2 relative" x-show="hasImage && !removeImage">
+                                    <img src="{{ asset('storage/' . $post->featured_image) }}" class="w-full h-32 object-cover rounded-lg border border-gray-200" alt="">
+                                    <button type="button" @click="removeImage = true; document.getElementById('remove_featured_image').value = '1'" 
+                                            class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Image">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="remove_featured_image" id="remove_featured_image" value="0">
+                                <div x-show="removeImage" class="mt-2 text-xs text-red-650 font-semibold" style="display: none;">
+                                    Image will be removed upon saving.
+                                    <button type="button" @click="removeImage = false; document.getElementById('remove_featured_image').value = '0'" class="text-indigo-650 hover:underline ml-2 cursor-pointer">Undo</button>
+                                </div>
+                            @endif
+                        </div>
+                        <input type="file" name="featured_image" id="featured_image"
+                               class="mt-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        @error('featured_image')
+                            <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
+                        @enderror
                     </div>
-                    <input type="file" name="featured_image" id="featured_image"
-                           class="mt-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                    <div class="flex items-center gap-2 mt-3">
-                        <button type="button" onclick="selectFeaturedImage()" 
-                                class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 font-semibold text-xs rounded-lg border border-indigo-100 dark:border-indigo-900/50 transition-colors flex items-center gap-1.5 cursor-pointer">
-                            🖼️ Select from Media Library
-                        </button>
-                    </div>
-                    @error('featured_image')
-                        <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
-                    @enderror
+                </div>
+
+                {{-- Action Buttons --}}
+                <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 flex flex-col gap-3">
+                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all cursor-pointer">
+                        Save Changes
+                    </button>
+                    <a href="{{ route('admin.posts.index') }}" class="w-full py-2.5 text-center text-gray-750 font-semibold text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-all">
+                        Cancel
+                    </a>
                 </div>
             </div>
-
-            {{-- Action Buttons --}}
-            <div class="bg-white rounded-xl border border-gray-150 shadow-sm p-6 flex flex-col gap-3">
-                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow transition-all">
-                    Save Changes
-                </button>
-                <a href="{{ route('admin.posts.index') }}" class="w-full py-2.5 text-center text-gray-750 font-semibold text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-all">
-                    Cancel
-                </a>
-            </div>
-        </div>
+        </div> </div>
     </form>
 
     {{-- Custom Media Picker Modal (Alpine.js) --}}
@@ -667,6 +705,51 @@
         </div>
     </div>
 </div>
+
+{{-- FAQ Pop-up Modal --}}
+<div id="faq-modal" class="fixed inset-0 z-[99999] overflow-y-auto hidden">
+    {{-- Backdrop --}}
+    <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" id="faq-modal-backdrop"></div>
+    
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-150 dark:border-slate-800 flex flex-col" style="max-width: 56rem; width: 100%;">
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-150 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">❓</span>
+                    <h3 class="text-base font-bold text-gray-805 dark:text-slate-100" id="faq-modal-title">Add FAQ</h3>
+                </div>
+                <button type="button" id="faq-modal-close" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-350 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Form Fields --}}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="faq-modal-question" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Question</label>
+                    <input type="text" id="faq-modal-question" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+                </div>
+                <div>
+                    <label for="faq-modal-answer" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Answer (Rich Text)</label>
+                    <textarea id="faq-modal-answer" rows="4" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200" placeholder="Write FAQ answer..."></textarea>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="px-6 py-4 border-t border-gray-150 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" id="faq-modal-cancel" class="px-4 py-2 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-350 rounded-lg text-xs font-bold transition-all">
+                    Cancel
+                </button>
+                <button type="button" id="faq-modal-save" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm hover:shadow">
+                    Save FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -683,80 +766,243 @@
         // FAQ interactive manager
         const faqContainer = document.getElementById('faq-container');
         const addFaqBtn = document.getElementById('add-faq-btn');
+        const addFaqBtnBottom = document.getElementById('add-faq-btn-bottom');
         const faqEmptyState = document.getElementById('faq-empty-state');
+        const addFaqBtnBottomContainer = document.getElementById('add-faq-btn-bottom-container');
         let faqIndex = faqContainer.querySelectorAll('.faq-row').length;
 
         function toggleEmptyState() {
-            if (faqContainer.querySelectorAll('.faq-row').length === 0) {
+            const hasFaqs = faqContainer.querySelectorAll('.faq-row').length > 0;
+            if (!hasFaqs) {
                 faqEmptyState.classList.remove('hidden');
+                addFaqBtnBottomContainer?.classList.add('hidden');
             } else {
                 faqEmptyState.classList.add('hidden');
+                addFaqBtnBottomContainer?.classList.remove('hidden');
             }
         }
 
-        // Init existing on page load
-        faqContainer.querySelectorAll('.faq-row textarea').forEach(textarea => {
-            initEditor(`#${textarea.id}`, 250);
-        });
+        // Initialize FAQ modal rich text editor
+        initEditor('#faq-modal-answer', 200);
 
+        // Modal Elements
+        const faqModal = document.getElementById('faq-modal');
+        const faqModalTitle = document.getElementById('faq-modal-title');
+        const faqModalQuestion = document.getElementById('faq-modal-question');
+        const faqModalAnswer = document.getElementById('faq-modal-answer');
+        let currentEditingRow = null;
+
+        function openFaqModalForAdd() {
+            currentEditingRow = null;
+            faqModalTitle.textContent = 'Add FAQ';
+            faqModalQuestion.value = '';
+            
+            const editor = window.tiptapInstances['faq-modal-answer'];
+            if (editor) {
+                editor.commands.setContent('');
+            } else {
+                faqModalAnswer.value = '';
+            }
+            
+            faqModal.classList.remove('hidden');
+        }
+
+        function openFaqModalForEdit(row) {
+            currentEditingRow = row;
+            faqModalTitle.textContent = 'Edit FAQ';
+            
+            const question = row.querySelector('.faq-question-input').value;
+            const answer = row.querySelector('.faq-answer-input').value;
+            
+            faqModalQuestion.value = question;
+            
+            const editor = window.tiptapInstances['faq-modal-answer'];
+            if (editor) {
+                editor.commands.setContent(answer);
+            } else {
+                faqModalAnswer.value = answer;
+            }
+            
+            faqModal.classList.remove('hidden');
+        }
+
+        function closeFaqModal() {
+            faqModal.classList.add('hidden');
+        }
+
+        // Add FAQ row builder
         window.addFaqRow = function(questionText = '', answerText = '') {
             const row = document.createElement('div');
-            row.className = 'faq-row bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 relative space-y-3';
+            row.className = 'faq-row bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200 dark:border-slate-800 relative flex items-start justify-between gap-4 group hover:border-indigo-150 transition-all';
             row.dataset.index = faqIndex;
             row.innerHTML = `
-                <button type="button" class="remove-faq-btn absolute top-3 right-3 text-gray-400 hover:text-red-650 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Question</label>
-                    <input type="text" name="faqs[${faqIndex}][question]" value="${questionText.replace(/"/g, '&quot;')}" required
-                           class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                <input type="hidden" name="faqs[${faqIndex}][question]" class="faq-question-input" value="${questionText.replace(/"/g, '&quot;')}">
+                <input type="hidden" name="faqs[${faqIndex}][answer]" class="faq-answer-input" value="${answerText.replace(/"/g, '&quot;')}">
+                
+                <div class="space-y-1.5 flex-1 min-w-0 pr-8">
+                    <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 faq-question-preview truncate">${questionText || '(No Question)'}</h4>
+                    <div class="text-xs text-gray-500 dark:text-slate-400 faq-answer-preview line-clamp-2 prose prose-sm dark:prose-invert max-w-none">${answerText || '(No Answer)'}</div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Answer (Rich Text)</label>
-                    <textarea id="faq-answer-${faqIndex}" name="faqs[${faqIndex}][answer]" rows="3"
-                              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">${answerText}</textarea>
+                
+                <div class="flex items-center gap-2 select-none">
+                    <button type="button" class="edit-faq-btn text-gray-400 hover:text-indigo-650 transition-colors p-1.5 hover:bg-gray-150 dark:hover:bg-slate-700 rounded-lg" title="Edit FAQ">
+                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button type="button" class="remove-faq-btn text-gray-400 hover:text-red-650 transition-colors p-1.5 hover:bg-gray-150 dark:hover:bg-slate-700 rounded-lg" title="Remove FAQ">
+                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                 </div>
             `;
             faqContainer.appendChild(row);
-            initEditor(`#faq-answer-${faqIndex}`, 250);
-            
-            // Set content in Tiptap instance if successfully loaded
-            const instId = `faq-answer-${faqIndex}`;
-            if (window.tiptapInstances && window.tiptapInstances[instId] && answerText) {
-                window.tiptapInstances[instId].commands.setContent(answerText);
-            }
-            
             faqIndex++;
             toggleEmptyState();
         };
 
-        addFaqBtn.addEventListener('click', function() {
-            window.addFaqRow('', '');
+        // Wire buttons
+        addFaqBtn.addEventListener('click', openFaqModalForAdd);
+        if (addFaqBtnBottom) {
+            addFaqBtnBottom.addEventListener('click', openFaqModalForAdd);
+        }
+
+        // Close handlers
+        document.getElementById('faq-modal-close')?.addEventListener('click', closeFaqModal);
+        document.getElementById('faq-modal-cancel')?.addEventListener('click', closeFaqModal);
+        document.getElementById('faq-modal-backdrop')?.addEventListener('click', closeFaqModal);
+
+        // Save handler
+        document.getElementById('faq-modal-save')?.addEventListener('click', function() {
+            const question = faqModalQuestion.value.trim();
+            const editor = window.tiptapInstances['faq-modal-answer'];
+            const answer = (editor ? editor.getHTML() : faqModalAnswer.value).trim();
+            
+            if (!question) {
+                alert('Please enter a question.');
+                return;
+            }
+            if (!answer || answer === '<p></p>') {
+                alert('Please enter an answer.');
+                return;
+            }
+            
+            if (currentEditingRow) {
+                // Update
+                currentEditingRow.querySelector('.faq-question-input').value = question;
+                currentEditingRow.querySelector('.faq-answer-input').value = answer;
+                currentEditingRow.querySelector('.faq-question-preview').textContent = question;
+                currentEditingRow.querySelector('.faq-answer-preview').innerHTML = answer;
+            } else {
+                // Add new
+                window.addFaqRow(question, answer);
+            }
+            
+            queueDraftSave();
+            closeFaqModal();
         });
 
+        // Event delegation for Edit and Remove inside the list
         faqContainer.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-faq-btn');
             const removeBtn = e.target.closest('.remove-faq-btn');
-            if (removeBtn) {
+            
+            if (editBtn) {
+                const row = editBtn.closest('.faq-row');
+                openFaqModalForEdit(row);
+            } else if (removeBtn) {
                 const row = removeBtn.closest('.faq-row');
-                const textarea = row.querySelector('textarea');
-                if (textarea && textarea.id) {
-                    if (window.tiptapInstances && window.tiptapInstances[textarea.id]) {
-                        window.tiptapInstances[textarea.id].destroy();
-                        delete window.tiptapInstances[textarea.id];
-                    } else if (typeof tinymce !== 'undefined' && tinymce.get(textarea.id)) {
-                        tinymce.get(textarea.id).remove();
-                    }
-                }
                 row.remove();
                 toggleEmptyState();
+                queueDraftSave();
             }
         });
+
+        // --- Draft Auto-Save & Restore Logic ---
+        const draftKey = 'universal_blog_cms_edit_post_draft_{{ $post->id }}';
+
+        function saveDraft() {
+            const draft = {
+                title: document.getElementById('title')?.value || '',
+                excerpt: document.getElementById('excerpt')?.value || '',
+                content: window.tiptapInstances['content']?.getHTML() || '',
+                faqs: []
+            };
+
+            const rows = faqContainer.querySelectorAll('.faq-row');
+            rows.forEach(row => {
+                const q = row.querySelector('.faq-question-input')?.value || '';
+                const a = row.querySelector('.faq-answer-input')?.value || '';
+                draft.faqs.push({ question: q, answer: a });
+            });
+
+            localStorage.setItem(draftKey, JSON.stringify(draft));
+        }
+
+        let draftTimeout = null;
+        function queueDraftSave() {
+            clearTimeout(draftTimeout);
+            draftTimeout = setTimeout(saveDraft, 1000);
+        }
+
+        // Add listeners to standard fields
+        document.getElementById('title')?.addEventListener('input', queueDraftSave);
+        document.getElementById('excerpt')?.addEventListener('input', queueDraftSave);
+
+        // Listen for editor updates
+        document.getElementById('content')?.addEventListener('input', queueDraftSave);
+        document.getElementById('content')?.addEventListener('change', queueDraftSave);
+
+        function restoreDraft() {
+            const saved = localStorage.getItem(draftKey);
+            if (!saved) return;
+
+            try {
+                const draft = JSON.parse(saved);
+                if (!draft.title && !draft.excerpt && !draft.content && (!draft.faqs || draft.faqs.length === 0)) {
+                    return;
+                }
+
+                // Show banner
+                const banner = document.getElementById('draft-banner-container');
+                if (banner) {
+                    banner.classList.remove('hidden');
+
+                    document.getElementById('restore-draft-btn')?.addEventListener('click', function() {
+                        if (draft.title) document.getElementById('title').value = draft.title;
+                        if (draft.excerpt) document.getElementById('excerpt').value = draft.excerpt;
+                        if (draft.content) {
+                            const editor = window.tiptapInstances['content'];
+                            if (editor) {
+                                editor.commands.setContent(draft.content);
+                            } else {
+                                document.getElementById('content').value = draft.content;
+                            }
+                        }
+                        if (draft.faqs && draft.faqs.length > 0) {
+                            faqContainer.innerHTML = '';
+                            draft.faqs.forEach(faq => {
+                                window.addFaqRow(faq.question, faq.answer);
+                            });
+                        }
+                        banner.classList.add('hidden');
+                    });
+
+                    document.getElementById('dismiss-draft-btn')?.addEventListener('click', function() {
+                        localStorage.removeItem(draftKey);
+                        banner.classList.add('hidden');
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to parse draft', e);
+            }
+        }
+
+        // Check restore on load
+        setTimeout(restoreDraft, 300);
 
         // Ensure Tiptap / TinyMCE contents are saved into their respective textareas before form submit
         const form = document.querySelector('form[action*="posts"]');
         if (form) {
             form.addEventListener('submit', function() {
+                localStorage.removeItem(draftKey);
                 if (typeof tinymce !== 'undefined') {
                     tinymce.triggerSave();
                 }

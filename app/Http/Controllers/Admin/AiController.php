@@ -59,7 +59,8 @@ class AiController extends Controller
                                . "CRITICAL: If the user did not provide any content (body text), you MUST write a complete, high-quality, professional, and detailed blog article body (at least 300-500 words) structured in valid HTML containing headings (h2, h3), paragraphs, lists or bold code terms where appropriate. Do not return empty content or placeholders.\n"
                                . "If the Title is missing, suggest a catchy, SEO-optimized title based on the other fields. If the Excerpt is missing, write a 1-2 sentence excerpt summarizing the article.";
         }
-        $systemInstruction .= "\nAdditionally, you must also generate 3 to 5 relevant Frequently Asked Questions (FAQs) with their concise HTML-formatted answers (using <p> tags, etc.) based on the article's topic or content.";
+        $systemInstruction .= "\nAdditionally, you must also generate 3 to 5 relevant Frequently Asked Questions (FAQs) with their concise HTML-formatted answers (using <p> tags, etc.) based on the article's topic or content."
+                           . "\nCRITICAL: You must generate a distinct 'meta_title' (under 60 characters) containing target search keywords, which should be different from the main article 'title'.";
 
         $prompt = "System Instruction:\n{$systemInstruction}\n\nHere is what the user provided:\n";
         if (!empty($title)) {
@@ -74,6 +75,7 @@ class AiController extends Controller
         $prompt .= "\nReturn a JSON object matching this schema exactly, containing all fields (use the user's provided value for fields that were already provided, or refine/complete them if they were empty, and generate 3 to 5 relevant FAQs):\n"
                  . "{\n"
                  . "  \"title\": \"The article title\",\n"
+                 . "  \"meta_title\": \"SEO-optimized meta title under 60 characters, distinct from the article title\",\n"
                  . "  \"content\": \"HTML body string\",\n"
                  . "  \"excerpt\": \"A 1-2 sentence excerpt summarizing the article\",\n"
                  . "  \"tags\": [\"Tag1\", \"Tag2\", \"Tag3\"],\n"
@@ -93,6 +95,7 @@ class AiController extends Controller
             return response()->json([
                 'success' => true,
                 'title' => $aiResult['title'] ?? ($title ?: 'Suggested Article Title'),
+                'meta_title' => $aiResult['meta_title'] ?? ($aiResult['title'] ?? ($title ?: 'Suggested Article Title')),
                 'content' => $aiResult['content'],
                 'excerpt' => $aiResult['excerpt'] ?? ($excerpt ?: ''),
                 'tags' => $aiResult['tags'] ?? [],
@@ -107,6 +110,7 @@ class AiController extends Controller
         $titleLower = strtolower($sourceText);
         if (str_contains($titleLower, 'laravel') || str_contains($titleLower, 'php') || str_contains($titleLower, 'code') || str_contains($titleLower, 'program')) {
             $fallbackTitle = !empty($title) ? $title : "Modern Web Development with PHP & Laravel";
+            $fallbackMetaTitle = "Laravel & PHP Web Development Best Practices | Guide";
             $fallbackContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
             $fallbackExcerpt = !empty($excerpt) ? $excerpt : "Learn the essential clean coding practices and performance optimization techniques for modern web developers.";
             $tags = ['Laravel', 'Programming', 'Clean Code'];
@@ -124,6 +128,7 @@ class AiController extends Controller
             ];
         } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'science') || str_contains($titleLower, 'python') || str_contains($titleLower, 'analyt')) {
             $fallbackTitle = !empty($title) ? $title : "The Rise of Data-Driven Decisions and Python";
+            $fallbackMetaTitle = "Transition to Python Data Science & ML | Learning Path";
             $fallbackContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
             $fallbackExcerpt = !empty($excerpt) ? $excerpt : "A comprehensive roadmap for developers looking to transition into data science and predictive analytics using Python.";
             $tags = ['Python', 'Data Science', 'Machine Learning'];
@@ -141,6 +146,7 @@ class AiController extends Controller
             ];
         } else {
             $fallbackTitle = !empty($title) ? $title : "Exploring the Future of Technology and Software Design";
+            $fallbackMetaTitle = "Future of Software Design & Tech Trends in 2026";
             $fallbackContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
             $fallbackExcerpt = !empty($excerpt) ? $excerpt : "An overview of core principles for building scalable modern tech solutions, focusing on simplicity and iteration.";
             $tags = ['Technology', 'Software Design', 'Development'];
@@ -161,6 +167,7 @@ class AiController extends Controller
         return response()->json([
             'success' => true,
             'title' => $fallbackTitle,
+            'meta_title' => $fallbackMetaTitle,
             'content' => $fallbackContent,
             'excerpt' => $fallbackExcerpt,
             'tags' => $tags,
