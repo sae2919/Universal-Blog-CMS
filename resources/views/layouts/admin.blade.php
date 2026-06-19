@@ -12,7 +12,7 @@
 
     <title>@yield('title', 'Admin Panel') — {{ config('app.name') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/admin.js'])
     @stack('styles')
 
     {{-- Dark Mode Init Script --}}

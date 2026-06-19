@@ -16,7 +16,7 @@
             <div class="md:col-span-2">
                 <a href="{{ route('blog.show', [$main->category->slug, $main->slug]) }}" class="group block relative rounded-2xl overflow-hidden h-80 lg:h-96 shadow-md">
                     @if($main->featured_image)
-                        <img src="{{ asset('storage/' . $main->featured_image) }}" alt="{{ $main->title }}"
+                        <img src="{{ asset('storage/' . $main->featured_image) }}" alt="{{ $main->title }}" width="800" height="384"
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     @else
                         <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600"></div>
@@ -40,7 +40,7 @@
                 @foreach($featuredPosts->skip(1)->take(2) as $post)
                     <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="group flex gap-4 bg-gray-50 rounded-xl p-4 hover:bg-indigo-50 transition-colors">
                         @if($post->featured_image)
-                            <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                            <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="80" height="80" loading="lazy"
                                  class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
                         @else
                             <div class="w-20 h-20 rounded-lg bg-indigo-100 flex-shrink-0"></div>
@@ -50,7 +50,7 @@
                                 {{ $post->category->icon_emoji }} {{ $post->category->name }}
                             </span>
                             <h3 class="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 line-clamp-2 mt-1">{{ $post->title }}</h3>
-                            <p class="text-xs text-gray-400 mt-1">{{ $post->published_at->diffForHumans() }}</p>
+                            <p class="text-xs text-gray-600 mt-1">{{ $post->published_at->diffForHumans() }}</p>
                         </div>
                     </a>
                 @endforeach
@@ -71,7 +71,7 @@
         @foreach($trendingPosts as $i => $post)
             <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="group flex-shrink-0 w-64 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 @if($post->featured_image)
-                    <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                    <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="256" height="144" loading="lazy"
                          class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300">
                 @else
                     <div class="w-full h-36 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
@@ -83,7 +83,7 @@
                         {{ $post->category->icon_emoji }} {{ $post->category->name }}
                     </span>
                     <h3 class="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 line-clamp-2 mt-1">{{ $post->title }}</h3>
-                    <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <p class="text-xs text-gray-600 mt-2 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         {{ number_format($post->views) }} {{ __('views') }}
                     </p>
@@ -111,7 +111,7 @@
                         {{-- Image --}}
                         <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="flex-shrink-0">
                             @if($post->featured_image)
-                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="112" height="96" loading="lazy"
                                      class="w-28 h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300">
                             @else
                                 <div class="w-28 h-24 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -130,7 +130,7 @@
                                     {{ $post->category->icon_emoji }} {{ $post->category->name }}
                                 </a>
                                 <span class="text-gray-200">·</span>
-                                <span class="text-xs text-gray-400">{{ $post->published_at->diffForHumans() }}</span>
+                                <span class="text-xs text-gray-600">{{ $post->published_at->diffForHumans() }}</span>
                             </div>
                             <h3 class="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors line-clamp-2">
                                 <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}">{{ $post->title }}</a>
@@ -138,7 +138,7 @@
                             @if($post->excerpt)
                                 <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ $post->excerpt }}</p>
                             @endif
-                            <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                            <div class="flex items-center gap-3 mt-2 text-xs text-gray-600">
                                 <span class="flex items-center gap-1">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     {{ $post->author->name }}
@@ -176,7 +176,7 @@
                     @foreach($popularPosts as $post)
                         <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="group flex gap-3 hover:text-indigo-600 transition-colors">
                             @if($post->featured_image)
-                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                                <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="48" height="48" loading="lazy"
                                      class="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-100 dark:border-slate-800 group-hover:opacity-90 transition-opacity">
                             @else
                                 <div class="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-500 font-bold text-[10px] uppercase flex items-center justify-center flex-shrink-0 border border-gray-100 dark:border-slate-800">
@@ -187,7 +187,7 @@
                                 <h4 class="text-sm font-semibold text-gray-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 line-clamp-2 leading-snug">
                                     {{ $post->title }}
                                 </h4>
-                                <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+                                <p class="text-[10px] text-gray-600 dark:text-slate-500 mt-0.5">
                                     {{ number_format($post->views) }} {{ __('views') }}
                                 </p>
                             </div>

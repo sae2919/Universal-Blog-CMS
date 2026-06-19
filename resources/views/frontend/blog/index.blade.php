@@ -10,9 +10,9 @@
     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
         {{-- Search Input --}}
         <form action="{{ route('blog.search') }}" method="GET" class="w-full md:w-1/2 relative">
-            <input type="text" name="q" placeholder="Search" value="{{ request('q') }}"
+            <input type="text" name="q" placeholder="Search" value="{{ request('q') }}" aria-label="Search posts"
                    class="w-full pl-5 pr-12 py-3 border border-gray-250 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
-            <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600">
+            <button type="submit" aria-label="Search posts" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-550 hover:text-indigo-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
@@ -21,10 +21,10 @@
 
         {{-- Categories Select Dropdown --}}
         <div class="w-full md:w-72 relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.outside="open = false"
+            <button @click="open = !open" @click.outside="open = false" aria-label="Filter by category"
                     class="w-full flex justify-between items-center px-5 py-3 border border-gray-250 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                 <span>Categories (All)</span>
-                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
@@ -50,9 +50,9 @@
                             {{-- Cover Image --}}
                             <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="block relative h-48 w-full overflow-hidden bg-gray-100">
                                 @if($post->featured_image)
-                                    <img src="{{ asset('storage/' . $post->featured_image) }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $post->title }}">
+                                    <img src="{{ asset('storage/' . $post->featured_image) }}" width="400" height="240" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $post->title }}">
                                 @else
-                                    <div class="w-full h-full flex items-center justify-center font-bold text-gray-400 text-sm bg-indigo-50/50">
+                                    <div class="w-full h-full flex items-center justify-center font-bold text-gray-600 text-sm bg-indigo-50/50">
                                         Blog
                                     </div>
                                 @endif
@@ -70,23 +70,23 @@
                         </div>
 
                         {{-- Footer Info --}}
-                        <div class="px-5 pb-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                            <div class="flex items-center gap-1.5">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="px-5 pb-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600">
+                            <span class="inline-flex items-center gap-1.5 py-1">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
                                 <span>{{ $post->published_at ? $post->published_at->format('d M y') : $post->created_at->format('d M y') }}</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            </span>
+                            <span class="inline-flex items-center gap-1 py-1">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                 </svg>
                                 <span>{{ number_format($post->views) }} {{ __('views') }}</span>
-                            </div>
+                            </span>
                         </div>
                     </article>
                 @empty
-                    <div class="col-span-full text-center py-16 text-gray-400">
+                    <div class="col-span-full text-center py-16 text-gray-600">
                         <svg class="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>

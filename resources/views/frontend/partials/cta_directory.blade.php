@@ -185,7 +185,7 @@
                                         @endforeach
                                     </ul>
                                 @else
-                                    <p class="text-xs text-gray-400">No links added.</p>
+                                    <p class="text-xs text-gray-600 dark:text-slate-400">No links added.</p>
                                 @endif
                             </div>
                         @endif
@@ -209,7 +209,7 @@
                                         @endforeach
                                     </ul>
                                 @else
-                                    <p class="text-xs text-gray-400">No links added.</p>
+                                    <p class="text-xs text-gray-600 dark:text-slate-400">No links added.</p>
                                 @endif
                             </div>
                         @endif
@@ -233,7 +233,7 @@
                                         @endforeach
                                     </ul>
                                 @else
-                                    <p class="text-xs text-gray-400">No links added.</p>
+                                    <p class="text-xs text-gray-600 dark:text-slate-400">No links added.</p>
                                 @endif
                             </div>
                         @endif

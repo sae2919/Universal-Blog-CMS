@@ -134,7 +134,7 @@
                             <span class="text-[10px] text-gray-400">{{ $comment->created_at->diffForHumans() }}</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-1 truncate">On: <span class="font-semibold text-gray-700">{{ $comment->post->title }}</span></p>
-                        <p class="text-sm text-gray-600 mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
+                        <p class="text-sm text-gray-600 mt-2 bg-gray-55 p-3 rounded-lg border border-gray-100 italic" style="word-break: break-all; overflow-wrap: break-word;">
                             "{{ Str::limit($comment->comment, 80) }}"
                         </p>
                         <div class="flex items-center gap-2 mt-3 justify-end">

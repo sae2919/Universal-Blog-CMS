@@ -77,7 +77,7 @@
                             </a>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-4 leading-normal font-medium">
+                    <p class="text-xs text-gray-600 dark:text-slate-400 mt-4 leading-normal font-medium">
                         {{ __('Assistance hours: Monday - Sunday By 24/7 Hours') }}
                     </p>
                 </div>
@@ -97,7 +97,7 @@
                             </a>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-4 leading-normal font-medium">
+                    <p class="text-xs text-gray-600 dark:text-slate-400 mt-4 leading-normal font-medium">
                         {{ __('Assistance hours: Monday - Sunday By 24/7 Hours') }}
                     </p>
                 </div>

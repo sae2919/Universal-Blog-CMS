@@ -194,8 +194,8 @@
                                 <div class="font-bold text-gray-900 dark:text-slate-100 leading-tight">{{ $comment->name }}</div>
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $comment->email }}</div>
                             </td>
-                            <td class="px-6 py-4 max-w-xs md:max-w-md">
-                                <p class="text-gray-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">{{ $comment->comment }}</p>
+                            <td class="px-6 py-4 max-w-xs md:max-w-md" style="word-break: break-all; overflow-wrap: break-word;">
+                                <p class="text-gray-700 dark:text-slate-300 whitespace-pre-line leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">{{ $comment->comment }}</p>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="font-semibold text-xs leading-snug block text-gray-650 dark:text-slate-300 truncate max-w-[180px]">

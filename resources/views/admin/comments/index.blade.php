@@ -30,8 +30,8 @@
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $comment->email }}</div>
                                 <div class="text-[10px] text-gray-500 font-mono mt-1">IP: {{ $comment->ip_address }}</div>
                             </td>
-                            <td class="px-6 py-4 max-w-xs md:max-w-md">
-                                <p class="text-gray-700 whitespace-pre-line leading-relaxed">{{ $comment->comment }}</p>
+                            <td class="px-6 py-4 max-w-xs md:max-w-md" style="word-break: break-all; overflow-wrap: break-word;">
+                                <p class="text-gray-700 whitespace-pre-line leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">{{ $comment->comment }}</p>
                                 <span class="text-[10px] text-gray-400 block mt-2">{{ $comment->created_at->format('M d, Y \a\t H:i') }}</span>
                             </td>
                             <td class="px-6 py-4">

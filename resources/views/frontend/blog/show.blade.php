@@ -96,7 +96,7 @@
         <div class="md:col-span-2">
 
                     {{-- Breadcrumb --}}
-                    <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+                    <nav class="flex items-center gap-2 text-sm text-gray-600 mb-6">
                         <a href="{{ route('home') }}" class="hover:text-indigo-600">{{ __('Home') }}</a>
                         <span>/</span>
                         <a href="{{ route('blog.category', $post->category->slug) }}" class="hover:opacity-85" style="color: {{ $post->category->accent_color }};">
@@ -127,7 +127,7 @@
                     </h1>
 
                     {{-- Author & Date --}}
-                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-6 pb-6 border-b border-gray-100">
+                    <div class="flex items-center gap-4 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-100">
                         <span>{{ $post->published_at->format('M d, Y') }}</span>
                         <span>·</span>
                         <span class="flex items-center gap-1">
@@ -147,7 +147,7 @@
 
                     {{-- Featured Image --}}
                     @if($post->featured_image)
-                        <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}"
+                        <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="800" height="384"
                              class="w-full rounded-2xl mb-8 object-cover max-h-96">
                     @endif
 
@@ -181,9 +181,9 @@
                     {{-- Comments --}}
                     @if($post->allow_comments)
                         <div class="mt-12 pt-8 border-t border-gray-100">
-                            <h3 class="text-xl font-bold text-gray-900 mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 mb-6">
                                 {{ __('Comments') }} ({{ $post->approvedComments->count() }})
-                            </h3>
+                            </h2>
 
                             {{-- Comments List --}}
                             @foreach($post->approvedComments as $comment)
@@ -191,19 +191,19 @@
                                     <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm flex-shrink-0">
                                         {{ strtoupper(substr($comment->name, 0, 1)) }}
                                     </div>
-                                    <div class="flex-1 bg-gray-50 rounded-xl p-4">
+                                    <div class="flex-1 bg-gray-50 rounded-xl p-4" style="min-width: 0;">
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="font-semibold text-sm text-gray-800">{{ $comment->name }}</span>
-                                            <span class="text-xs text-gray-400">{{ $comment->created_at->diffForHumans() }}</span>
+                                            <span class="text-xs text-gray-600">{{ $comment->created_at->diffForHumans() }}</span>
                                         </div>
-                                        <p class="text-sm text-gray-700">{{ $comment->comment }}</p>
+                                        <p class="text-sm text-gray-700" style="word-break: break-all; overflow-wrap: break-word; word-wrap: break-word;">{{ $comment->comment }}</p>
                                     </div>
                                 </div>
                             @endforeach
 
                             {{-- Comment Form --}}
                             <div class="mt-8 bg-gray-50 rounded-2xl p-6">
-                                <h4 class="font-bold text-gray-800 mb-4">{{ __('Leave a Comment') }}</h4>
+                                <h2 class="font-bold text-gray-805 text-lg mb-4">{{ __('Leave a Comment') }}</h2>
 
                                 @if(session('success'))
                                     <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm mb-4">
@@ -215,21 +215,21 @@
                                     @csrf
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Name *') }}</label>
-                                            <input type="text" name="name" value="{{ old('name') }}" required
+                                            <label for="comment_name" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Name *') }}</label>
+                                            <input type="text" name="name" id="comment_name" value="{{ old('name') }}" required
                                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                             @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Email *') }}</label>
-                                            <input type="email" name="email" value="{{ old('email') }}" required
+                                            <label for="comment_email" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Email *') }}</label>
+                                            <input type="email" name="email" id="comment_email" value="{{ old('email') }}" required
                                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                             @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Comment *') }}</label>
-                                        <textarea name="comment" rows="4" required
+                                        <label for="comment_text" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Comment *') }}</label>
+                                        <textarea name="comment" id="comment_text" rows="4" required
                                                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none">{{ old('comment') }}</textarea>
                                         @error('comment')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                                     </div>
@@ -245,10 +245,10 @@
                     {{-- FAQ Section --}}
                     @if(!empty($post->faqs) && count($post->faqs) > 0)
                         <div class="mt-12 pt-8 border-t border-gray-150 dark:border-slate-800">
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6 flex items-center gap-2">
                                 <svg class="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 {{ __('Frequently Asked Questions') }}
-                            </h3>
+                            </h2>
                             
                             <div x-data="{ activeIndex: null }" class="space-y-4">
                                 @foreach($post->faqs as $index => $faq)
@@ -258,7 +258,7 @@
                                                 @click="activeIndex = activeIndex === {{ $index }} ? null : {{ $index }}"
                                                 class="w-full flex justify-between items-center px-5 py-4 text-left font-semibold text-gray-805 dark:text-slate-205 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors focus:outline-none">
                                             <span>{{ $faq['question'] }}</span>
-                                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                                            <svg class="w-5 h-5 text-gray-500 transition-transform duration-200"
                                                  :class="activeIndex === {{ $index }} ? 'transform rotate-180 text-indigo-500' : ''"
                                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -441,13 +441,13 @@
 
                     inlineTocDiv.innerHTML = `
                         <div class="flex items-center justify-between cursor-pointer select-none pb-2.5 border-b border-gray-150 dark:border-slate-800/50 toc-toggle-header">
-                            <h3 class="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 m-0 border-none p-0">
+                            <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 m-0 border-none p-0">
                                 <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                                 </svg>
                                 {{ __('Table of Contents') }}
-                            </h3>
-                            <button class="text-gray-400 hover:text-indigo-500 transition-colors p-1" aria-label="Toggle Table of Contents">
+                            </h2>
+                            <button class="text-gray-600 hover:text-indigo-500 transition-colors p-1" aria-label="Toggle Table of Contents">
                                 <svg class="w-4 h-4 transition-transform duration-250 toc-chevron" style="transform: rotate(0deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                 </svg>

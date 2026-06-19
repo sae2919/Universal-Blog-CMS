@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class PageController extends Controller
 {
@@ -37,8 +39,14 @@ class PageController extends Controller
         ]);
 
         if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')
-                ->store('pages', 'public');
+            $file = $request->file('featured_image');
+            $filename = uniqid() . '.webp';
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file)
+                ->cover(1200, 500)
+                ->toWebp(75);
+            \Storage::disk('public')->put('pages/' . $filename, $image);
+            $validated['featured_image'] = 'pages/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
             $validated['featured_image'] = $request->input('generated_image_path');
         }
@@ -87,8 +95,14 @@ class PageController extends Controller
             if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
                 \Storage::disk('public')->delete($page->featured_image);
             }
-            $validated['featured_image'] = $request->file('featured_image')
-                ->store('pages', 'public');
+            $file = $request->file('featured_image');
+            $filename = uniqid() . '.webp';
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file)
+                ->cover(1200, 500)
+                ->toWebp(75);
+            \Storage::disk('public')->put('pages/' . $filename, $image);
+            $validated['featured_image'] = 'pages/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
             if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
                 \Storage::disk('public')->delete($page->featured_image);

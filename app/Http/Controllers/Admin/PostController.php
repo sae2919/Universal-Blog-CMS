@@ -8,6 +8,9 @@ use App\Models\Category;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class PostController extends Controller
 {
@@ -70,8 +73,16 @@ class PostController extends Controller
         ]);
 
         if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')
-                ->store('posts', 'public');
+            $file = $request->file('featured_image');
+            $filename = uniqid() . '.webp';
+            
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file)
+                ->cover(800, 480)
+                ->toWebp(75);
+            
+            Storage::disk('public')->put('posts/' . $filename, $image);
+            $validated['featured_image'] = 'posts/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
             $validated['featured_image'] = $request->input('generated_image_path');
         }
@@ -99,6 +110,9 @@ class PostController extends Controller
 
         $post = Post::create($validated);
         $post->tags()->sync($request->tags ?? []);
+
+        // Run SEO diagnostics and notify immediately
+        app(\App\Services\SeoService::class)->runSeoAuditAndNotify($post->fresh(['tags']));
 
         $this->clearPostCaches($post);
 
@@ -153,19 +167,27 @@ class PostController extends Controller
         ]);
 
         if ($request->hasFile('featured_image')) {
-            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
-                \Storage::disk('public')->delete($post->featured_image);
+            if ($post->featured_image && Storage::disk('public')->exists($post->featured_image)) {
+                Storage::disk('public')->delete($post->featured_image);
             }
-            $validated['featured_image'] = $request->file('featured_image')
-                ->store('posts', 'public');
+            $file = $request->file('featured_image');
+            $filename = uniqid() . '.webp';
+            
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file)
+                ->cover(800, 480)
+                ->toWebp(75);
+            
+            Storage::disk('public')->put('posts/' . $filename, $image);
+            $validated['featured_image'] = 'posts/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
-            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
-                \Storage::disk('public')->delete($post->featured_image);
+            if ($post->featured_image && Storage::disk('public')->exists($post->featured_image)) {
+                Storage::disk('public')->delete($post->featured_image);
             }
             $validated['featured_image'] = $request->input('generated_image_path');
         } elseif ($request->boolean('remove_featured_image')) {
-            if ($post->featured_image && \Storage::disk('public')->exists($post->featured_image)) {
-                \Storage::disk('public')->delete($post->featured_image);
+            if ($post->featured_image && Storage::disk('public')->exists($post->featured_image)) {
+                Storage::disk('public')->delete($post->featured_image);
             }
             $validated['featured_image'] = null;
         }
@@ -196,6 +218,9 @@ class PostController extends Controller
         $post->update($validated);
         $post->tags()->sync($request->tags ?? []);
 
+        // Run SEO diagnostics and update/create notification immediately
+        app(\App\Services\SeoService::class)->runSeoAuditAndNotify($post->fresh(['tags']));
+
         $this->clearPostCaches($post);
 
         return redirect()->route('admin.posts.index')
@@ -204,6 +229,11 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
+        // Delete any pending SEO notification for this post
+        \App\Models\Notification::where('link', '/admin/posts/' . $post->id . '/edit')
+            ->where('type', 'seo')
+            ->delete();
+
         $this->clearPostCaches($post);
         $post->delete();
         return redirect()->route('admin.posts.index')

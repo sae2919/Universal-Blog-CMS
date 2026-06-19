@@ -7,7 +7,7 @@
                 <h3 class="text-white text-xl font-bold mb-3">
                     {{ \App\Models\Setting::getValue('site_name', config('app.name')) }}
                 </h3>
-                <p class="text-sm text-gray-400 leading-relaxed mb-5">
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">
                     {{ \App\Models\Setting::getValue('site_tagline', 'Your go-to source for quality content.') }}
                 </p>
                 {{-- Social Links --}}
@@ -45,7 +45,7 @@
                     @foreach($footerCats as $cat)
                         <li>
                             <a href="{{ route('blog.category', $cat->slug) }}"
-                               class="text-sm text-gray-400 hover:text-white transition-colors">
+                               class="inline-block py-1.5 text-sm text-gray-300 hover:text-white transition-colors">
                                 → {{ $cat->name }}
                             </a>
                         </li>
@@ -57,12 +57,12 @@
             <div>
                 <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{{ __('Quick Links') }}</h4>
                 <ul class="space-y-2">
-                    <li><a href="{{ url('/') }}" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('Home') }}</a></li>
-                    <li><a href="{{ route('blog.index') }}" class="text-sm text-gray-400 hover:text-white transition-colors">{{ __('Blog') }}</a></li>
+                    <li><a href="{{ url('/') }}" class="inline-block py-1.5 text-sm text-gray-300 hover:text-white transition-colors">{{ __('Home') }}</a></li>
+                    <li><a href="{{ route('blog.index') }}" class="inline-block py-1.5 text-sm text-gray-300 hover:text-white transition-colors">{{ __('Blog') }}</a></li>
                     @if(isset($footerPages) && $footerPages->isNotEmpty())
                         @foreach($footerPages as $page)
                             <li>
-                                <a href="{{ url('/' . $page->slug) }}" class="text-sm text-gray-400 hover:text-white transition-colors">
+                                <a href="{{ url('/' . $page->slug) }}" class="inline-block py-1.5 text-sm text-gray-300 hover:text-white transition-colors">
                                     {{ $page->title }}
                                 </a>
                             </li>
@@ -77,7 +77,6 @@
             <p class="text-xs text-gray-500">
                 &copy; {{ now()->year }} {{ \App\Models\Setting::getValue('site_name') }}. {{ __('All rights reserved.') }}
             </p>
-            <a href="/sitemap.xml" class="text-xs text-gray-600 hover:text-gray-400 transition-colors">{{ __('Sitemap') }}</a>
         </div>
     </div>
 </footer>

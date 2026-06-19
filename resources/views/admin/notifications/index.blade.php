@@ -79,7 +79,7 @@
                                 <span class="w-2 h-2 bg-indigo-500 rounded-full" title="Unread"></span>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-650 dark:text-slate-350 mt-1 leading-relaxed">
+                        <p class="text-sm text-gray-650 dark:text-slate-350 mt-1 leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">
                             {{ $notification->message }}
                         </p>
                         <div class="flex items-center gap-3 mt-2 text-xs text-gray-400 dark:text-slate-455">

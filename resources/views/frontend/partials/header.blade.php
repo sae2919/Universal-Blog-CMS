@@ -8,6 +8,7 @@
                     @if(\App\Models\Setting::getValue('site_logo'))
                         <img src="{{ asset('storage/' . \App\Models\Setting::getValue('site_logo')) }}"
                              alt="{{ \App\Models\Setting::getValue('site_name') }}"
+                             width="128" height="32"
                              class="h-8 w-auto">
                     @else
                         <span class="text-xl font-bold text-indigo-600">
@@ -33,7 +34,7 @@
                                    class="text-sm font-medium whitespace-nowrap {{ (request()->url() == url($item->url) || ($item->url === '#' && request()->routeIs('blog.*'))) ? 'text-indigo-600 font-semibold' : 'text-gray-600 hover:text-indigo-600' }} transition-colors">
                                     {{ $item->title }}
                                 </a>
-                                <button @click="open = !open"
+                                <button @click="open = !open" aria-label="Toggle submenu"
                                         class="p-1 text-gray-500 hover:text-indigo-600 focus:outline-none transition-colors">
                                     <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -70,7 +71,7 @@
                     @endphp
 
                     <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" @click.outside="open = false"
+                        <button @click="open = !open" @click.outside="open = false" aria-label="Toggle categories list"
                                 class="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors whitespace-nowrap">
                             {{ __('Categories') }}
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +113,7 @@
                 @endauth
 
                 {{-- Mobile Menu Button --}}
-                <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                <button @click="mobileOpen = !mobileOpen" aria-label="Toggle mobile menu" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
                     <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>

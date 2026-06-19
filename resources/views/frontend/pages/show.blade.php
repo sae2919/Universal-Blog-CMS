@@ -21,7 +21,7 @@
         {{-- Featured Image --}}
         @if($page->featured_image)
             <div class="mb-12 rounded-3xl overflow-hidden shadow-md border border-gray-150 dark:border-slate-800">
-                <img src="{{ asset('storage/' . $page->featured_image) }}" class="w-full h-auto max-h-[500px] object-cover" alt="{{ $page->title }}">
+                <img src="{{ asset('storage/' . $page->featured_image) }}" width="1200" height="500" loading="lazy" class="w-full h-auto max-h-[500px] object-cover" alt="{{ $page->title }}">
             </div>
         @endif
 
