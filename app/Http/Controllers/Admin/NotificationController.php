@@ -50,6 +50,24 @@ class NotificationController extends Controller
     }
 
     /**
+     * Mark a specific notification as read and redirect to its target link.
+     */
+    public function click(int $id)
+    {
+        $notification = Notification::findOrFail($id);
+        if (is_null($notification->read_at)) {
+            $notification->markAsRead();
+        }
+
+        $link = $notification->link;
+        if (empty($link)) {
+            $link = route('admin.notifications.index');
+        }
+
+        return redirect($link);
+    }
+
+    /**
      * Remove all notifications from storage.
      */
     public function clearAll()

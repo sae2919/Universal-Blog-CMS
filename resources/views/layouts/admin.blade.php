@@ -275,7 +275,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between">
-                                            <a href="{{ $notification->link ?? route('admin.notifications.index') }}" class="font-bold text-xs text-gray-900 dark:text-slate-100 hover:underline truncate">{{ $notification->title }}</a>
+                                            <a href="{{ route('admin.notifications.click', $notification->id) }}" class="font-bold text-xs text-gray-900 dark:text-slate-100 hover:underline truncate">{{ $notification->title }}</a>
                                             <span class="text-[9px] text-gray-400 whitespace-nowrap">{{ $notification->created_at->diffForHumans() }}</span>
                                         </div>
                                         <p class="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">{{ $notification->message }}</p>

@@ -96,7 +96,7 @@
                     {{-- Actions --}}
                     <div class="flex items-center gap-3 flex-shrink-0 self-center">
                         @if($notification->link)
-                            <a href="{{ $notification->link }}" class="text-indigo-600 hover:text-indigo-850 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold text-sm">
+                            <a href="{{ route('admin.notifications.click', $notification->id) }}" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold text-sm">
                                 View
                             </a>
                         @endif

@@ -50,6 +50,7 @@ Route::prefix('admin')
 
         // SEO Diagnostics CRUD/Overview
         Route::get('seo', [App\Http\Controllers\Admin\SeoController::class, 'index'])->name('seo.index');
+        Route::get('seo/audit/{type}/{id}', [App\Http\Controllers\Admin\SeoController::class, 'audit'])->name('seo.audit');
 
         // Tags CRUD
         Route::resource('tags', TagController::class)->except(['show']);
@@ -78,6 +79,7 @@ Route::prefix('admin')
 
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/{id}/click', [NotificationController::class, 'click'])->name('notifications.click')->whereNumber('id');
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read')->whereNumber('id');
         Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
