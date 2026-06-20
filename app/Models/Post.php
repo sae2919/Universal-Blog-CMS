@@ -11,6 +11,17 @@ class Post extends Model
 {
     use HasFactory, Sluggable, SoftDeletes;
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            $rawContent = $model->getAttributes()['content'] ?? '';
+            if ($model->image_metadata && is_array($model->image_metadata)) {
+                $model->image_metadata = app(\App\Services\ImageMetadataService::class)->optimizeMetadata($model->image_metadata, $rawContent, $model->featured_image);
+            }
+            $model->attributes['content'] = app(\App\Services\ImageMetadataService::class)->stripSrc($rawContent, $model->image_metadata ?? []);
+        });
+    }
+
     protected $fillable = [
         'user_id', 'category_id', 'locale', 'title', 'slug', 'excerpt', 'content', 'faqs', 'featured_image',
         'status', 'published_at', 'views', 'is_featured', 'is_trending', 'allow_comments',
@@ -105,5 +116,15 @@ class Post extends Model
     public function getOgImageAttribute($value): ?string
     {
         return $value ?? $this->featured_image;
+    }
+
+    public function getOptimizedContentAttribute(): string
+    {
+        return app(\App\Services\ImageMetadataService::class)->enhanceContent($this->getRawOriginal('content') ?? '', $this->image_metadata ?? []);
+    }
+
+    public function getContentAttribute($value)
+    {
+        return app(\App\Services\ImageMetadataService::class)->restoreSrc($value ?? '', $this->image_metadata ?? []);
     }
 }

@@ -35,7 +35,12 @@ class CategoryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            $file = $request->file('image');
+            $filename = uniqid() . '.webp';
+            $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+            $image = $manager->read($file)->toWebp(90);
+            \Storage::disk('public')->put('categories/' . $filename, $image);
+            $validated['image'] = 'categories/' . $filename;
         }
 
         Category::create($validated);
@@ -63,7 +68,15 @@ class CategoryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            if ($category->image && \Storage::disk('public')->exists($category->image)) {
+                \Storage::disk('public')->delete($category->image);
+            }
+            $file = $request->file('image');
+            $filename = uniqid() . '.webp';
+            $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+            $image = $manager->read($file)->toWebp(90);
+            \Storage::disk('public')->put('categories/' . $filename, $image);
+            $validated['image'] = 'categories/' . $filename;
         }
 
         $category->update($validated);

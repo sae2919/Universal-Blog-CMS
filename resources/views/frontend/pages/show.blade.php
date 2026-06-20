@@ -30,7 +30,7 @@
                     prose-headings:text-indigo-950 dark:prose-headings:text-white prose-headings:font-extrabold
                     prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
                     prose-p:mb-6 prose-li:mb-2 prose-ul:list-disc prose-ul:pl-6">
-            {!! preg_replace('/(\.\.\/)+storage\//', '/storage/', $page->content) !!}
+            {!! preg_replace('/(\.\.\/)+storage\//', '/storage/', $page->optimized_content) !!}
         </div>
     </div>
 </div>

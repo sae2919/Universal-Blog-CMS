@@ -40,11 +40,26 @@ class PageController extends Controller
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $filename = uniqid() . '.webp';
+            $extension = strtolower($file->getClientOriginalExtension());
+            $convertible = in_array($extension, ['jpeg', 'jpg', 'png', 'webp']);
+            if ($convertible) {
+                $extension = 'webp';
+            }
+            $filename = uniqid() . '.' . $extension;
             $manager = new ImageManager(new Driver());
-            $image = $manager->read($file)
-                ->cover(1200, 500)
-                ->toWebp(75);
+            $imageObj = $manager->read($file)
+                ->cover(1200, 500);
+            
+            if ($extension === 'webp') {
+                $image = $imageObj->toWebp(90);
+            } elseif ($extension === 'png') {
+                $image = $imageObj->toPng();
+            } elseif ($extension === 'gif') {
+                $image = $imageObj->toGif();
+            } else {
+                $image = $imageObj->toJpeg(80);
+            }
+            
             \Storage::disk('public')->put('pages/' . $filename, $image);
             $validated['featured_image'] = 'pages/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
@@ -96,11 +111,26 @@ class PageController extends Controller
                 \Storage::disk('public')->delete($page->featured_image);
             }
             $file = $request->file('featured_image');
-            $filename = uniqid() . '.webp';
+            $extension = strtolower($file->getClientOriginalExtension());
+            $convertible = in_array($extension, ['jpeg', 'jpg', 'png', 'webp']);
+            if ($convertible) {
+                $extension = 'webp';
+            }
+            $filename = uniqid() . '.' . $extension;
             $manager = new ImageManager(new Driver());
-            $image = $manager->read($file)
-                ->cover(1200, 500)
-                ->toWebp(75);
+            $imageObj = $manager->read($file)
+                ->cover(1200, 500);
+            
+            if ($extension === 'webp') {
+                $image = $imageObj->toWebp(90);
+            } elseif ($extension === 'png') {
+                $image = $imageObj->toPng();
+            } elseif ($extension === 'gif') {
+                $image = $imageObj->toGif();
+            } else {
+                $image = $imageObj->toJpeg(80);
+            }
+            
             \Storage::disk('public')->put('pages/' . $filename, $image);
             $validated['featured_image'] = 'pages/' . $filename;
         } elseif ($request->filled('generated_image_path')) {

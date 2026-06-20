@@ -154,7 +154,7 @@
                     {{-- Content --}}
                     <div class="prose prose-lg prose-indigo max-w-none text-gray-700 leading-relaxed" style="--h2-stripe-color: {{ $post->category->accent_color ?? '#4f46e5' }};">
                         @php
-                            $content = $post->content;
+                            $content = $post->optimized_content;
                             if (strpos($content, 'post-cta') !== false) {
                                 $ctaHtml = view('frontend.partials.cta_directory', compact('post'))->render();
                                 $content = preg_replace('/<div[^>]*class=["\'][^"\']*post-cta[^"\']*["\'][^>]*>.*?<\/div>/is', $ctaHtml, $content);

@@ -74,12 +74,26 @@ class PostController extends Controller
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $filename = uniqid() . '.webp';
+            $extension = strtolower($file->getClientOriginalExtension());
+            $convertible = in_array($extension, ['jpeg', 'jpg', 'png', 'webp']);
+            if ($convertible) {
+                $extension = 'webp';
+            }
+            $filename = uniqid() . '.' . $extension;
             
             $manager = new ImageManager(new Driver());
-            $image = $manager->read($file)
-                ->cover(800, 480)
-                ->toWebp(75);
+            $imageObj = $manager->read($file)
+                ->cover(800, 480);
+            
+            if ($extension === 'webp') {
+                $image = $imageObj->toWebp(90);
+            } elseif ($extension === 'png') {
+                $image = $imageObj->toPng();
+            } elseif ($extension === 'gif') {
+                $image = $imageObj->toGif();
+            } else {
+                $image = $imageObj->toJpeg(80);
+            }
             
             Storage::disk('public')->put('posts/' . $filename, $image);
             $validated['featured_image'] = 'posts/' . $filename;
@@ -171,12 +185,26 @@ class PostController extends Controller
                 Storage::disk('public')->delete($post->featured_image);
             }
             $file = $request->file('featured_image');
-            $filename = uniqid() . '.webp';
+            $extension = strtolower($file->getClientOriginalExtension());
+            $convertible = in_array($extension, ['jpeg', 'jpg', 'png', 'webp']);
+            if ($convertible) {
+                $extension = 'webp';
+            }
+            $filename = uniqid() . '.' . $extension;
             
             $manager = new ImageManager(new Driver());
-            $image = $manager->read($file)
-                ->cover(800, 480)
-                ->toWebp(75);
+            $imageObj = $manager->read($file)
+                ->cover(800, 480);
+            
+            if ($extension === 'webp') {
+                $image = $imageObj->toWebp(90);
+            } elseif ($extension === 'png') {
+                $image = $imageObj->toPng();
+            } elseif ($extension === 'gif') {
+                $image = $imageObj->toGif();
+            } else {
+                $image = $imageObj->toJpeg(80);
+            }
             
             Storage::disk('public')->put('posts/' . $filename, $image);
             $validated['featured_image'] = 'posts/' . $filename;

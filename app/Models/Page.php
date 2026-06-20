@@ -11,6 +11,17 @@ class Page extends Model
 {
     use HasFactory, Sluggable, SoftDeletes;
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            $rawContent = $model->getAttributes()['content'] ?? '';
+            if ($model->image_metadata && is_array($model->image_metadata)) {
+                $model->image_metadata = app(\App\Services\ImageMetadataService::class)->optimizeMetadata($model->image_metadata, $rawContent, $model->featured_image);
+            }
+            $model->attributes['content'] = app(\App\Services\ImageMetadataService::class)->stripSrc($rawContent, $model->image_metadata ?? []);
+        });
+    }
+
     protected $fillable = [
         'title', 'slug', 'locale', 'content', 'featured_image',
         'meta_title', 'meta_description', 'meta_keywords', 'status',
@@ -46,5 +57,15 @@ class Page extends Model
     public function scopeForCurrentLocale($query)
     {
         return $query->where('locale', app()->getLocale());
+    }
+
+    public function getOptimizedContentAttribute(): string
+    {
+        return app(\App\Services\ImageMetadataService::class)->enhanceContent($this->getRawOriginal('content') ?? '', $this->image_metadata ?? []);
+    }
+
+    public function getContentAttribute($value)
+    {
+        return app(\App\Services\ImageMetadataService::class)->restoreSrc($value ?? '', $this->image_metadata ?? []);
     }
 }

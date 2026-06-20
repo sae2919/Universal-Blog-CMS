@@ -45,18 +45,36 @@ class MediaController extends Controller
             // Generate clean name
             $originalName = $file->getClientOriginalName();
             $fileName = pathinfo($originalName, PATHINFO_FILENAME);
-            $extension = $file->getClientOriginalExtension();
-            $cleanName = \Str::slug($fileName) . '-' . time() . '.' . $extension;
-
-            // Store in storage/app/public/uploads
-            $filePath = $file->storeAs('uploads', $cleanName, 'public');
+            $extension = strtolower($file->getClientOriginalExtension());
+            
+            $convertible = in_array($extension, ['jpeg', 'jpg', 'png', 'webp']);
+            
+            if ($convertible) {
+                $extension = 'webp';
+                $cleanName = \Str::slug($fileName) . '-' . time() . '.' . $extension;
+                
+                $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+                $image = $manager->read($file)->toWebp(90);
+                
+                \Storage::disk('public')->put('uploads/' . $cleanName, $image);
+                $filePath = 'uploads/' . $cleanName;
+                
+                $mimeType = 'image/webp';
+                $fileSize = strlen($image);
+                $originalName = pathinfo($originalName, PATHINFO_FILENAME) . '.webp';
+            } else {
+                $cleanName = \Str::slug($fileName) . '-' . time() . '.' . $extension;
+                $filePath = $file->storeAs('uploads', $cleanName, 'public');
+                $mimeType = $file->getClientMimeType();
+                $fileSize = $file->getSize();
+            }
 
             // Save record
             $media = Media::create([
                 'file_name'   => $originalName,
                 'file_path'   => $filePath,
-                'mime_type'   => $file->getClientMimeType(),
-                'file_size'   => $file->getSize(),
+                'mime_type'   => $mimeType,
+                'file_size'   => $fileSize,
                 'uploaded_by' => auth()->id(),
             ]);
 

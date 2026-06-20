@@ -341,6 +341,7 @@
                 return ({ node, HTMLAttributes, getPos, editor }) => {
                     const container = document.createElement('div');
                     container.className = 'tiptap-image-wrapper my-4 mx-auto';
+                    container.setAttribute('contenteditable', 'false');
                     container.style.position = 'relative';
                     container.style.display = 'block';
                     container.style.width = node.attrs.width || 'fit-content';
@@ -378,7 +379,6 @@
                     Object.entries(HTMLAttributes).forEach(([key, value]) => {
                         img.setAttribute(key, value);
                     });
-                    img.setAttribute('draggable', 'false');
                     
                     img.className = 'rounded-lg max-w-full shadow-sm border border-gray-200 dark:border-slate-800 cursor-pointer block mx-auto';
                     img.style.display = 'block';
