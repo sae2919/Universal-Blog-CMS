@@ -12,6 +12,23 @@ use App\Http\Controllers\ProfileController;
 |--------------------------------------------------------------------------
 */
 
+// Dynamic robots.txt (injects APP_URL so Sitemap: is always the correct domain)
+Route::get('/robots.txt', function () {
+    $content = "User-agent: *\n"
+        . "Disallow: /admin/\n"
+        . "Disallow: /admin\n"
+        . "Disallow: /login\n"
+        . "Disallow: /register\n"
+        . "Disallow: /logout\n"
+        . "Disallow: /dashboard\n"
+        . "Disallow: /profile\n"
+        . "Disallow: /search?\n"
+        . "Disallow: /storage/\n\n"
+        . "Allow: /\n\n"
+        . "Sitemap: " . config('app.url') . "/sitemap.xml\n";
+    return response($content, 200, ['Content-Type' => 'text/plain']);
+})->name('robots');
+
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 

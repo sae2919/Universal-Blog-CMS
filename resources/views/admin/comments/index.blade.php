@@ -60,7 +60,7 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    @if($comment->status !== 'approved')
+                                    @if($comment->status === 'pending')
                                         <form action="{{ route('admin.comments.approve', $comment->id) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
@@ -68,8 +68,6 @@
                                                 Approve
                                             </button>
                                         </form>
-                                    @endif
-                                    @if($comment->status !== 'rejected')
                                         <form action="{{ route('admin.comments.reject', $comment->id) }}" method="POST">
                                             @csrf
                                             @method('PATCH')

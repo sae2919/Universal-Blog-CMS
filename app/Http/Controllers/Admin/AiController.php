@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class AiController extends Controller
 {
@@ -60,7 +62,11 @@ class AiController extends Controller
                                . "If the Title is missing, suggest a catchy, SEO-optimized title based on the other fields. If the Excerpt is missing, write a 1-2 sentence excerpt summarizing the article.";
         }
         $systemInstruction .= "\nAdditionally, you must also generate 3 to 5 relevant Frequently Asked Questions (FAQs) with their concise HTML-formatted answers (using <p> tags, etc.) based on the article's topic or content."
-                           . "\nCRITICAL: You must generate a distinct 'meta_title' (under 60 characters) containing target search keywords, which should be different from the main article 'title'.";
+                            . "\nCRITICAL: You must generate a distinct 'meta_title' (under 60 characters) containing target search keywords, which should be different from the main article 'title'."
+                            . "\nYou can insert high-quality, relevant inline images and an image slider into the HTML body content. Do not use markdown tags, write only valid HTML."
+                            . "\n- For an inline image, insert: <img data-ai-prompt=\"A detailed descriptive prompt of what this image should show, e.g. a programmer coding in a dark room with neon lights\" />"
+                            . "\n- For an image slider, insert: <div class=\"post-slider-placeholder\" data-ai-prompt=\"A detailed descriptive prompt for a set of 3-5 related stock photos, e.g. different views of a modern server database room\" data-count=\"3\"></div>"
+                            . "\nDo this for 1 to 2 inline images and exactly 1 image slider at appropriate logical breaks in the article.";
 
         $prompt = "System Instruction:\n{$systemInstruction}\n\nHere is what the user provided:\n";
         if (!empty($title)) {
@@ -91,90 +97,126 @@ class AiController extends Controller
 
         $aiResult = $this->callGemini($prompt, true);
 
+        // Resolve data from either Gemini or Fallback
+        $outputTitle = '';
+        $outputMetaTitle = '';
+        $outputContent = '';
+        $outputExcerpt = '';
+        $outputTags = [];
+        $outputKeywords = '';
+        $outputSeoDescription = '';
+        $outputFaqs = [];
+        $isOffline = false;
+
         if ($aiResult && isset($aiResult['content']) && !empty(trim(strip_tags($aiResult['content'])))) {
-            return response()->json([
-                'success' => true,
-                'title' => $aiResult['title'] ?? ($title ?: 'Suggested Article Title'),
-                'meta_title' => $aiResult['meta_title'] ?? ($aiResult['title'] ?? ($title ?: 'Suggested Article Title')),
-                'content' => $aiResult['content'],
-                'excerpt' => $aiResult['excerpt'] ?? ($excerpt ?: ''),
-                'tags' => $aiResult['tags'] ?? [],
-                'keywords' => $aiResult['keywords'] ?? '',
-                'seo_description' => $aiResult['seo_description'] ?? '',
-                'faqs' => $aiResult['faqs'] ?? [],
-            ]);
+            $outputTitle = $aiResult['title'] ?? ($title ?: 'Suggested Article Title');
+            $outputMetaTitle = $aiResult['meta_title'] ?? ($aiResult['title'] ?? ($title ?: 'Suggested Article Title'));
+            $outputContent = $aiResult['content'];
+            $outputExcerpt = $aiResult['excerpt'] ?? ($excerpt ?: '');
+            $outputTags = $aiResult['tags'] ?? [];
+            $outputKeywords = $aiResult['keywords'] ?? '';
+            $outputSeoDescription = $aiResult['seo_description'] ?? '';
+            $outputFaqs = $aiResult['faqs'] ?? [];
+        } else {
+            // Local Fallback if API fails/is offline
+            $sourceText = !empty($title) ? $title : (!empty($content) ? $content : (!empty($excerpt) ? $excerpt : ''));
+            $titleLower = strtolower($sourceText);
+            if (str_contains($titleLower, 'laravel') || str_contains($titleLower, 'php') || str_contains($titleLower, 'code') || str_contains($titleLower, 'program')) {
+                $outputTitle = !empty($title) ? $title : "Modern Web Development with PHP & Laravel";
+                $outputMetaTitle = "Laravel & PHP Web Development Best Practices | Guide";
+                $outputContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<p><img data-ai-prompt=\"minimalist desk setup with laptop displaying code, neon glow, sharp focus\" /></p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"creative coding environment, team working on software development\" data-count=\"3\"></div>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
+                $outputExcerpt = !empty($excerpt) ? $excerpt : "Learn the essential clean coding practices and performance optimization techniques for modern web developers.";
+                $outputTags = ['Laravel', 'Programming', 'Clean Code'];
+                $outputKeywords = "laravel, clean code, SOLID principles, database optimization";
+                $outputSeoDescription = "An in-depth guide on implementing SOLID design principles and performance optimization techniques in web applications.";
+                $outputFaqs = [
+                    [
+                        'question' => 'What are the main performance optimization techniques in Laravel?',
+                        'answer' => '<p>Performance optimization in Laravel includes eager loading relationships using <code>with()</code> to solve the N+1 query problem, caching database queries, and optimizing routes and configuration.</p>'
+                    ],
+                    [
+                        'question' => 'How do I follow SOLID principles in Laravel development?',
+                        'answer' => '<p>To follow SOLID principles, make sure each controller and class has a single responsibility, invert dependencies using the Service Container, and write interface-driven code to decouple your business logic.</p>'
+                    ]
+                ];
+            } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'science') || str_contains($titleLower, 'python') || str_contains($titleLower, 'analyt')) {
+                $outputTitle = !empty($title) ? $title : "The Rise of Data-Driven Decisions and Python";
+                $outputMetaTitle = "Transition to Python Data Science & ML | Learning Path";
+                $outputContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<p><img data-ai-prompt=\"server room, glowing server racks, blue led lights\" /></p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"complex interactive data charts and graphs, analytics charts\" data-count=\"3\"></div>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
+                $outputExcerpt = !empty($excerpt) ? $excerpt : "A comprehensive roadmap for developers looking to transition into data science and predictive analytics using Python.";
+                $outputTags = ['Python', 'Data Science', 'Machine Learning'];
+                $outputKeywords = "data science, python, machine learning, pandas, scikit-learn";
+                $outputSeoDescription = "A complete guide on transitioning into data science, including fundamental libraries, data cleaning, and machine learning pipelines.";
+                $outputFaqs = [
+                    [
+                        'question' => 'Why is Python preferred for data science?',
+                        'answer' => '<p>Python offers an incredibly rich ecosystem of open-source libraries like Pandas, NumPy, and Scikit-Learn, which make data manipulation and predictive modeling highly efficient.</p>'
+                    ],
+                    [
+                        'question' => 'What are the core libraries for getting started in Python data science?',
+                        'answer' => '<p>Mastering Pandas for dataframes, NumPy for numerical operations, and Seaborn or Matplotlib for plotting are the key steps for starting in data science.</p>'
+                    ]
+                ];
+            } else {
+                $outputTitle = !empty($title) ? $title : "Exploring the Future of Technology and Software Design";
+                $outputMetaTitle = "Future of Software Design & Tech Trends in 2026";
+                $outputContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<p><img data-ai-prompt=\"futuristic cyber room, artificial intelligence hologram\" /></p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"modern smart city technology, dynamic connected web of technology\" data-count=\"3\"></div>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
+                $outputExcerpt = !empty($excerpt) ? $excerpt : "An overview of core principles for building scalable modern tech solutions, focusing on simplicity and iteration.";
+                $outputTags = ['Technology', 'Software Design', 'Development'];
+                $outputKeywords = "technology, development, software design, MVP, optimization";
+                $outputSeoDescription = "Learn the core principles of modern tech solutions, including simplicity, continuous iteration, and performance optimization.";
+                $outputFaqs = [
+                    [
+                        'question' => 'What is the key takeaway of this article?',
+                        'answer' => '<p>This article provides an in-depth view of modern tech development, simple structures, and optimization methods for developers.</p>'
+                    ],
+                    [
+                        'question' => 'How can developers scale modern applications?',
+                        'answer' => '<p>Developers can scale systems by starting with clear, simple MVPs, optimizing performance parameters incrementally, and automating repetitive tasks.</p>'
+                    ]
+                ];
+            }
+            $isOffline = true;
         }
 
-        // Local Fallback if API fails/is offline
-        $sourceText = !empty($title) ? $title : (!empty($content) ? $content : (!empty($excerpt) ? $excerpt : ''));
-        $titleLower = strtolower($sourceText);
-        if (str_contains($titleLower, 'laravel') || str_contains($titleLower, 'php') || str_contains($titleLower, 'code') || str_contains($titleLower, 'program')) {
-            $fallbackTitle = !empty($title) ? $title : "Modern Web Development with PHP & Laravel";
-            $fallbackMetaTitle = "Laravel & PHP Web Development Best Practices | Guide";
-            $fallbackContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
-            $fallbackExcerpt = !empty($excerpt) ? $excerpt : "Learn the essential clean coding practices and performance optimization techniques for modern web developers.";
-            $tags = ['Laravel', 'Programming', 'Clean Code'];
-            $keywords = "laravel, clean code, SOLID principles, database optimization";
-            $seoDescription = "An in-depth guide on implementing SOLID design principles and performance optimization techniques in web applications.";
-            $faqs = [
-                [
-                    'question' => 'What are the main performance optimization techniques in Laravel?',
-                    'answer' => '<p>Performance optimization in Laravel includes eager loading relationships using <code>with()</code> to solve the N+1 query problem, caching database queries, and optimizing routes and configuration.</p>'
-                ],
-                [
-                    'question' => 'How do I follow SOLID principles in Laravel development?',
-                    'answer' => '<p>To follow SOLID principles, make sure each controller and class has a single responsibility, invert dependencies using the Service Container, and write interface-driven code to decouple your business logic.</p>'
-                ]
-            ];
-        } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'science') || str_contains($titleLower, 'python') || str_contains($titleLower, 'analyt')) {
-            $fallbackTitle = !empty($title) ? $title : "The Rise of Data-Driven Decisions and Python";
-            $fallbackMetaTitle = "Transition to Python Data Science & ML | Learning Path";
-            $fallbackContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
-            $fallbackExcerpt = !empty($excerpt) ? $excerpt : "A comprehensive roadmap for developers looking to transition into data science and predictive analytics using Python.";
-            $tags = ['Python', 'Data Science', 'Machine Learning'];
-            $keywords = "data science, python, machine learning, pandas, scikit-learn";
-            $seoDescription = "A complete guide on transitioning into data science, including fundamental libraries, data cleaning, and machine learning pipelines.";
-            $faqs = [
-                [
-                    'question' => 'Why is Python preferred for data science?',
-                    'answer' => '<p>Python offers an incredibly rich ecosystem of open-source libraries like Pandas, NumPy, and Scikit-Learn, which make data manipulation and predictive modeling highly efficient.</p>'
-                ],
-                [
-                    'question' => 'What are the core libraries for getting started in Python data science?',
-                    'answer' => '<p>Mastering Pandas for dataframes, NumPy for numerical operations, and Seaborn or Matplotlib for plotting are the key steps for starting in data science.</p>'
-                ]
-            ];
+        $generatedMedia = [];
+
+        // 1. Generate Featured Image (Thumbnail) automatically using the title
+        $featuredUrl = $this->getUnsplashUrlForPrompt($outputTitle);
+        $featuredData = $this->saveImageFromUrl($featuredUrl);
+        if (!$featuredData) {
+            $featuredData = $this->getFallbackImagePayload();
         } else {
-            $fallbackTitle = !empty($title) ? $title : "Exploring the Future of Technology and Software Design";
-            $fallbackMetaTitle = "Future of Software Design & Tech Trends in 2026";
-            $fallbackContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
-            $fallbackExcerpt = !empty($excerpt) ? $excerpt : "An overview of core principles for building scalable modern tech solutions, focusing on simplicity and iteration.";
-            $tags = ['Technology', 'Software Design', 'Development'];
-            $keywords = "technology, development, software design, MVP, optimization";
-            $seoDescription = "Learn the core principles of modern tech solutions, including simplicity, continuous iteration, and performance optimization.";
-            $faqs = [
-                [
-                    'question' => 'What is the key takeaway of this article?',
-                    'answer' => '<p>This article provides an in-depth view of modern tech development, simple structures, and optimization methods for developers.</p>'
-                ],
-                [
-                    'question' => 'How can developers scale modern applications?',
-                    'answer' => '<p>Developers can scale systems by starting with clear, simple MVPs, optimizing performance parameters incrementally, and automating repetitive tasks.</p>'
-                ]
+            // Register featured image metadata
+            $fileSize = 0;
+            try {
+                $fileSize = Storage::disk('public')->size($featuredData['path']) ?? 0;
+            } catch (\Exception $e) {}
+            $generatedMedia[] = [
+                'id' => 'img_' . round(microtime(true) * 1000) . '_0',
+                'fileName' => $featuredData['fileName'],
+                'fileType' => 'image/webp',
+                'fileSize' => $fileSize
             ];
         }
+
+        // 2. Process inline images and sliders embedded inside outputContent
+        $outputContent = $this->processGeneratedHtml($outputContent, $generatedMedia);
 
         return response()->json([
             'success' => true,
-            'title' => $fallbackTitle,
-            'meta_title' => $fallbackMetaTitle,
-            'content' => $fallbackContent,
-            'excerpt' => $fallbackExcerpt,
-            'tags' => $tags,
-            'keywords' => $keywords,
-            'seo_description' => $seoDescription,
-            'faqs' => $faqs,
-            'offline' => true,
+            'title' => $outputTitle,
+            'meta_title' => $outputMetaTitle,
+            'content' => $outputContent,
+            'excerpt' => $outputExcerpt,
+            'tags' => $outputTags,
+            'keywords' => $outputKeywords,
+            'seo_description' => $outputSeoDescription,
+            'faqs' => $outputFaqs,
+            'featured_image_url' => $featuredData['url'] ?? null,
+            'featured_image_path' => $featuredData['path'] ?? null,
+            'generated_media' => $generatedMedia,
+            'offline' => $isOffline,
         ]);
     }
 
@@ -384,60 +426,283 @@ class AiController extends Controller
         $aiResult = $this->callGemini($aiPrompt, true);
         $keyword = $aiResult['keyword'] ?? $prompt;
 
-        // Map keywords to high-quality Unsplash image URLs
-        $url = 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200'; // Tech fallback
-        $keywordLower = strtolower($keyword);
-        if (str_contains($keywordLower, 'code') || str_contains($keywordLower, 'program') || str_contains($keywordLower, 'develop') || str_contains($keywordLower, 'laravel') || str_contains($keywordLower, 'php')) {
-            $url = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200';
-        } elseif (str_contains($keywordLower, 'data') || str_contains($keywordLower, 'science') || str_contains($keywordLower, 'python') || str_contains($keywordLower, 'analyt')) {
-            $url = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200';
-        } elseif (str_contains($keywordLower, 'business') || str_contains($keywordLower, 'office') || str_contains($keywordLower, 'finance')) {
-            $url = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200';
-        } elseif (str_contains($keywordLower, 'design') || str_contains($keywordLower, 'art') || str_contains($keywordLower, 'creative')) {
-            $url = 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200';
-        } elseif (str_contains($keywordLower, 'seo') || str_contains($keywordLower, 'marketing') || str_contains($keywordLower, 'rank')) {
-            $url = 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=1200';
+        $url = $this->getUnsplashUrlForPrompt($keyword);
+        $imgData = $this->saveImageFromUrl($url);
+
+        if ($imgData) {
+            return response()->json([
+                'success' => true,
+                'url' => $imgData['url'],
+                'path' => $imgData['path'],
+                'fileName' => $imgData['fileName'],
+                'media_id' => $imgData['media_id'],
+            ]);
         }
 
+        // Fallback in case request times out or is offline
+        $fallback = $this->getFallbackImagePayload();
+        return response()->json($fallback);
+    }
+
+    /**
+     * Helper to download an image from Unsplash, convert it to WebP (quality 90),
+     * save it to disk, and register it in the Media library.
+     */
+    private function saveImageFromUrl(string $url)
+    {
         try {
             $response = Http::timeout(15)->get($url);
             if ($response->successful()) {
                 $contents = $response->body();
-                $fileName = 'ai_generated_' . time() . '.jpg';
-                $filePath = 'media/' . $fileName;
                 
-                Storage::disk('public')->makeDirectory('media');
-                Storage::disk('public')->put($filePath, $contents);
+                // Process image using Intervention Image manager
+                $manager = new ImageManager(new Driver());
+                $image = $manager->read($contents)->toWebp(90);
+                
+                $fileName = 'ai_generated_' . time() . '_' . uniqid() . '.webp';
+                $filePath = 'uploads/' . $fileName;
+                
+                Storage::disk('public')->makeDirectory('uploads');
+                Storage::disk('public')->put($filePath, $image);
 
                 $media = Media::create([
                     'file_name' => $fileName,
                     'file_path' => $filePath,
-                    'mime_type' => 'image/jpeg',
-                    'file_size' => strlen($contents),
+                    'mime_type' => 'image/webp',
+                    'file_size' => strlen($image),
                     'uploaded_by' => auth()->id() ?? 1,
                 ]);
 
-                return response()->json([
+                return [
                     'success' => true,
                     'url' => asset('storage/' . $filePath),
                     'path' => $filePath,
                     'fileName' => $fileName,
                     'media_id' => $media->id,
-                ]);
+                ];
             }
         } catch (\Exception $e) {
-            Log::error('Failed to download Unsplash image: ' . $e->getMessage());
+            Log::error('Failed to process AI image: ' . $e->getMessage());
         }
 
-        // Fallback in case request times out or is offline
-        return response()->json([
+        return null;
+    }
+
+    /**
+     * Return fallback image structure.
+     */
+    private function getFallbackImagePayload()
+    {
+        return [
             'success' => true,
             'url' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200',
             'path' => 'posts/default-ai.jpg',
             'fileName' => 'default-ai.jpg',
             'media_id' => null,
             'offline' => true,
-        ]);
+        ];
+    }
+
+    /**
+     * Map prompts and keywords to high-quality Unsplash image URLs.
+     */
+    private function getUnsplashUrlForPrompt(string $prompt): string
+    {
+        $urls = [
+            'ai' => [
+                'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200',
+                'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200',
+                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200'
+            ],
+            'code' => [
+                'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200',
+                'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200',
+                'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200'
+            ],
+            'data' => [
+                'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200',
+                'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
+                'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1200'
+            ],
+            'design' => [
+                'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200',
+                'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=1200'
+            ],
+            'security' => [
+                'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200',
+                'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200'
+            ],
+            'mobile' => [
+                'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200',
+                'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200'
+            ],
+            'cloud' => [
+                'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
+                'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200'
+            ],
+            'business' => [
+                'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200',
+                'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200'
+            ],
+            'nature' => [
+                'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200',
+                'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200'
+            ],
+            'writing' => [
+                'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200',
+                'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200'
+            ]
+        ];
+
+        $promptLower = strtolower($prompt);
+        $matchedCategory = 'code';
+
+        if (preg_match('/\b(ai|robot|artificial|future|machine learning|deep learning)\b/i', $promptLower)) {
+            $matchedCategory = 'ai';
+        } elseif (preg_match('/\b(data|science|python|analysis|analytics|database|sql)\b/i', $promptLower)) {
+            $matchedCategory = 'data';
+        } elseif (preg_match('/\b(code|program|develop|laravel|php|javascript|html|css|software)\b/i', $promptLower)) {
+            $matchedCategory = 'code';
+        } elseif (preg_match('/\b(design|art|creative|ux|ui|painting|illustration)\b/i', $promptLower)) {
+            $matchedCategory = 'design';
+        } elseif (preg_match('/\b(security|cyber|hack|firewall|vault|protect)\b/i', $promptLower)) {
+            $matchedCategory = 'security';
+        } elseif (preg_match('/\b(mobile|app|phone|ios|android|tablet)\b/i', $promptLower)) {
+            $matchedCategory = 'mobile';
+        } elseif (preg_match('/\b(cloud|server|network|hosting|internet)\b/i', $promptLower)) {
+            $matchedCategory = 'cloud';
+        } elseif (preg_match('/\b(business|office|finance|meeting|marketing|team)\b/i', $promptLower)) {
+            $matchedCategory = 'business';
+        } elseif (preg_match('/\b(nature|forest|travel|mountain|river|landscape)\b/i', $promptLower)) {
+            $matchedCategory = 'nature';
+        } elseif (preg_match('/\b(writing|blog|book|keyboard|type|author)\b/i', $promptLower)) {
+            $matchedCategory = 'writing';
+        }
+
+        $list = $urls[$matchedCategory];
+        $index = strlen($prompt) % count($list);
+        return $list[$index];
+    }
+
+    /**
+     * Parse HTML and replace image/slider placeholders with fully resolved elements.
+     */
+    private function processGeneratedHtml(string $content, array &$generatedMedia): string
+    {
+        if (empty($content)) {
+            return $content;
+        }
+
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        $dom->loadHTML('<?xml encoding="utf-8" ?><div>' . $content . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+        $counter = 1;
+
+        // 1. Process inline images: <img data-ai-prompt="..." />
+        $imgs = $xpath->query('//img[@data-ai-prompt]');
+        foreach ($imgs as $img) {
+            $aiPrompt = $img->getAttribute('data-ai-prompt');
+            if ($aiPrompt) {
+                $url = $this->getUnsplashUrlForPrompt($aiPrompt);
+                $imgData = $this->saveImageFromUrl($url);
+                if (!$imgData) {
+                    $imgData = $this->getFallbackImagePayload();
+                }
+
+                $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
+                $fileSize = 0;
+                if ($imgData['media_id']) {
+                    try {
+                        $fileSize = Storage::disk('public')->size($imgData['path']) ?? 0;
+                    } catch (\Exception $e) {}
+                }
+                $generatedMedia[] = [
+                    'id' => $imgId,
+                    'fileName' => $imgData['fileName'],
+                    'fileType' => 'image/webp',
+                    'fileSize' => $fileSize
+                ];
+
+                $wrapper = $dom->createElement('div');
+                $wrapper->setAttribute('class', 'tiptap-image-wrapper my-4 mx-auto');
+                $wrapper->setAttribute('contenteditable', 'false');
+                $wrapper->setAttribute('draggable', 'true');
+                $wrapper->setAttribute('style', 'position: relative; display: block; width: fit-content; max-width: 100%; margin-top: 1rem; margin-bottom: 1rem; float: none; margin-left: auto; margin-right: auto; clear: both;');
+
+                $newImg = $dom->createElement('img');
+                $newImg->setAttribute('src', $imgData['url']);
+                $newImg->setAttribute('data-image-id', $imgId);
+                $newImg->setAttribute('class', 'rounded-lg max-w-full shadow-sm border border-gray-200 dark:border-slate-800 cursor-pointer block mx-auto');
+                $newImg->setAttribute('style', 'display: block; max-w-100%; width: auto;');
+                
+                $wrapper->appendChild($newImg);
+                $img->parentNode->replaceChild($wrapper, $img);
+            }
+        }
+
+        // 2. Process image sliders: <div class="post-slider-placeholder" data-ai-prompt="..." data-count="..."></div>
+        $sliders = $xpath->query('//div[contains(@class, "post-slider-placeholder")] | //div[contains(@class, "post-slider")][@data-ai-prompt]');
+        foreach ($sliders as $slider) {
+            $aiPrompt = $slider->getAttribute('data-ai-prompt');
+            $count = intval($slider->getAttribute('data-count') ?: 3);
+            if ($count < 2) $count = 3;
+            if ($count > 5) $count = 5;
+
+            if ($aiPrompt) {
+                $sliderImagesHtml = '';
+                for ($i = 0; $i < $count; $i++) {
+                    $uniquePrompt = $aiPrompt . " variant " . ($i + 1);
+                    $url = $this->getUnsplashUrlForPrompt($uniquePrompt);
+                    $imgData = $this->saveImageFromUrl($url);
+                    if (!$imgData) {
+                        $imgData = $this->getFallbackImagePayload();
+                    }
+
+                    $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
+                    $fileSize = 0;
+                    if ($imgData['media_id']) {
+                        try {
+                            $fileSize = Storage::disk('public')->size($imgData['path']) ?? 0;
+                        } catch (\Exception $e) {}
+                    }
+                    $generatedMedia[] = [
+                        'id' => $imgId,
+                        'fileName' => $imgData['fileName'],
+                        'fileType' => 'image/webp',
+                        'fileSize' => $fileSize
+                    ];
+
+                    $sliderImagesHtml .= '<p><img src="' . $imgData['url'] . '" data-image-id="' . $imgId . '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>';
+                }
+
+                $sliderWrapper = $dom->createElement('div');
+                $sliderWrapper->setAttribute('class', 'post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start');
+                
+                $tempDom = new \DOMDocument();
+                $tempDom->loadHTML('<?xml encoding="utf-8" ?><div>' . $sliderImagesHtml . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                foreach ($tempDom->getElementsByTagName('p') as $p) {
+                    $importedNode = $dom->importNode($p, true);
+                    $sliderWrapper->appendChild($importedNode);
+                }
+
+                $slider->parentNode->replaceChild($sliderWrapper, $slider);
+            }
+        }
+
+        $outputHtml = '';
+        $rootDiv = $dom->getElementsByTagName('div')->item(0);
+        if ($rootDiv) {
+            foreach ($rootDiv->childNodes as $child) {
+                $outputHtml .= $dom->saveHTML($child);
+            }
+        } else {
+            $outputHtml = $dom->saveHTML();
+        }
+
+        return $outputHtml;
     }
 
     /**

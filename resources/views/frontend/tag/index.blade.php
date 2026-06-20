@@ -3,6 +3,11 @@
 @section('meta_title', 'Articles Tagged with #' . $tag->name . ' — ' . \App\Models\Setting::getValue('site_name'))
 @section('meta_description', 'Browse all posts tagged with ' . $tag->name)
 
+{{-- Tag pages are thin-content archives: index them but tell bots not to pass link equity --}}
+@push('schema')
+<meta name="robots" content="noindex, follow">
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
     {{-- Header Banner --}}

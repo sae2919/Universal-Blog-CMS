@@ -43,6 +43,9 @@ class AiTest extends TestCase
                 'tags',
                 'keywords',
                 'seo_description',
+                'featured_image_url',
+                'featured_image_path',
+                'generated_media',
             ])
             ->assertJson([
                 'success' => true,
@@ -50,6 +53,16 @@ class AiTest extends TestCase
 
         $this->assertNotEmpty($response->json('title'));
         $this->assertNotEmpty($response->json('content'));
+        $this->assertNotEmpty($response->json('featured_image_url'));
+        $this->assertNotEmpty($response->json('featured_image_path'));
+        $this->assertIsArray($response->json('generated_media'));
+
+        $content = $response->json('content');
+        // Ensure placeholders were replaced with tiptap wrapper and post-slider class
+        $this->assertStringContainsString('tiptap-image-wrapper', $content);
+        $this->assertStringContainsString('post-slider', $content);
+        $this->assertStringNotContainsString('data-ai-prompt', $content);
+        $this->assertStringNotContainsString('post-slider-placeholder', $content);
     }
 
     public function test_correct_grammar_endpoint_rectifies_text()

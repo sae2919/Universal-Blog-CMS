@@ -166,6 +166,29 @@
         background-color: #475569 !important;
         display: inline-block !important;
     }
+
+    /* Table Grid Picker Styles */
+    .table-grid-cell {
+        width: 14px;
+        height: 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 2px;
+        background-color: #ffffff;
+        cursor: pointer;
+        transition: background-color 75ms, border-color 75ms;
+    }
+    .dark .table-grid-cell {
+        border-color: #475569;
+        background-color: #1e293b;
+    }
+    .table-grid-cell.active {
+        background-color: #4f46e5;
+        border-color: #4338ca;
+    }
+    .dark .table-grid-cell.active {
+        background-color: #6366f1;
+        border-color: #4f46e5;
+    }
 </style>
 
 {{-- Load Tiptap from Bundled Assets --}}
@@ -190,6 +213,226 @@
         }
 
         const { Editor, Node, mergeAttributes, StarterKit, Underline, Image, Link, Table, TableRow, TableCell, TableHeader, Placeholder, TextAlign, Highlight, Color, TextStyle, BulletList } = window.Tiptap;
+
+        // Custom Table extension to handle Enter inside the last cell of the table
+        const CustomTable = Table.extend({
+            addKeyboardShortcuts() {
+                return {
+                    ...this.parent?.(),
+                    Enter: () => {
+                        const editor = this.editor;
+                        const { selection, doc } = editor.state;
+                        
+                        if (!editor.isActive('table')) {
+                            return false;
+                        }
+                        
+                        let cellPos = null;
+                        let tableNode = null;
+                        let tableDepth = -1;
+                        
+                        let $pos = selection.$from;
+                        let depth = $pos.depth;
+                        
+                        for (let i = depth; i > 0; i--) {
+                            const node = $pos.node(i);
+                            if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
+                                cellPos = $pos.before(i);
+                            }
+                            if (node.type.name === 'table') {
+                                tableNode = node;
+                                tableDepth = i;
+                                break;
+                            }
+                        }
+                        
+                        if (tableNode && cellPos !== null) {
+                            let lastCellPos = null;
+                            let tablePos = $pos.before(tableDepth);
+                            
+                            doc.nodesBetween(tablePos, tablePos + tableNode.nodeSize, (node, pos) => {
+                                if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
+                                    lastCellPos = pos;
+                                }
+                            });
+                            
+                            if (cellPos === lastCellPos) {
+                                // Add a row after and focus its first cell
+                                return editor.chain().addRowAfter().goToNextCell().run();
+                            }
+                        }
+                        
+                        return false;
+                    }
+                };
+            },
+            addCommands() {
+                return {
+                    ...this.parent?.(),
+                    setCellBackgroundColor: color => ({ state, dispatch }) => {
+                        let $pos = state.selection.$from;
+                        let cellDepth = -1;
+                        for (let i = $pos.depth; i > 0; i--) {
+                            if ($pos.node(i).type.name === 'tableCell' || $pos.node(i).type.name === 'tableHeader') {
+                                cellDepth = i;
+                                break;
+                            }
+                        }
+                        if (cellDepth === -1) return false;
+                        
+                        let cellPos = $pos.before(cellDepth);
+                        let cellNode = $pos.node(cellDepth);
+                        let transaction = state.tr;
+                        transaction.setNodeMarkup(cellPos, null, {
+                            ...cellNode.attrs,
+                            backgroundColor: color
+                        });
+                        if (dispatch) {
+                            dispatch(transaction);
+                        }
+                        return true;
+                    },
+                    setRowBackgroundColor: color => ({ state, dispatch }) => {
+                        let $pos = state.selection.$from;
+                        let rowDepth = -1;
+                        for (let i = $pos.depth; i > 0; i--) {
+                            if ($pos.node(i).type.name === 'tableRow') {
+                                rowDepth = i;
+                                break;
+                            }
+                        }
+                        if (rowDepth === -1) return false;
+                        
+                        let rowNode = $pos.node(rowDepth);
+                        let rowPos = $pos.before(rowDepth);
+                        let transaction = state.tr;
+                        let offset = rowPos + 1;
+                        
+                        rowNode.forEach((cellNode, cellOffset) => {
+                            let cellPos = offset + cellOffset;
+                            transaction.setNodeMarkup(cellPos, null, {
+                                ...cellNode.attrs,
+                                backgroundColor: color
+                            });
+                        });
+                        
+                        if (dispatch) {
+                            dispatch(transaction);
+                        }
+                        return true;
+                    },
+                    setColumnBackgroundColor: color => ({ state, dispatch }) => {
+                        let $pos = state.selection.$from;
+                        let cellDepth = -1;
+                        let tableDepth = -1;
+                        for (let i = $pos.depth; i > 0; i--) {
+                            if ($pos.node(i).type.name === 'tableCell' || $pos.node(i).type.name === 'tableHeader') {
+                                cellDepth = i;
+                            }
+                            if ($pos.node(i).type.name === 'table') {
+                                tableDepth = i;
+                                break;
+                            }
+                        }
+                        if (tableDepth === -1 || cellDepth === -1) return false;
+                        
+                        let tableNode = $pos.node(tableDepth);
+                        let tablePos = $pos.before(tableDepth);
+                        let cellPos = $pos.before(cellDepth);
+                        
+                        let rowDepth = -1;
+                        for (let i = $pos.depth; i > 0; i--) {
+                            if ($pos.node(i).type.name === 'tableRow') {
+                                rowDepth = i;
+                                break;
+                            }
+                        }
+                        if (rowDepth === -1) return false;
+                        let rowNode = $pos.node(rowDepth);
+                        let rowPos = $pos.before(rowDepth);
+                        
+                        let targetColIndex = -1;
+                        let colIndex = 0;
+                        let offset = rowPos + 1;
+                        rowNode.forEach((cellNode, cellOffset) => {
+                            if (offset + cellOffset === cellPos) {
+                                targetColIndex = colIndex;
+                            }
+                            colIndex += cellNode.attrs.colspan || 1;
+                        });
+                        
+                        if (targetColIndex === -1) return false;
+                        
+                        let transaction = state.tr;
+                        let currentOffset = tablePos + 1;
+                        
+                        tableNode.forEach((rowNode) => {
+                            let colIndex = 0;
+                            rowNode.forEach((cellNode, cellOffset) => {
+                                let cellColIndex = colIndex;
+                                colIndex += cellNode.attrs.colspan || 1;
+                                
+                                if (targetColIndex >= cellColIndex && targetColIndex < colIndex) {
+                                    let absoluteCellPos = currentOffset + 1 + cellOffset;
+                                    transaction.setNodeMarkup(absoluteCellPos, null, {
+                                        ...cellNode.attrs,
+                                        backgroundColor: color
+                                    });
+                                }
+                            });
+                            currentOffset += rowNode.nodeSize;
+                        });
+                        
+                        if (dispatch) {
+                            dispatch(transaction);
+                        }
+                        return true;
+                    }
+                };
+            }
+        });
+
+        // Custom TableCell extension to support backgroundColor attribute
+        const CustomTableCell = TableCell.extend({
+            addAttributes() {
+                return {
+                    ...this.parent?.(),
+                    backgroundColor: {
+                        default: null,
+                        parseHTML: element => element.style.backgroundColor || null,
+                        renderHTML: attributes => {
+                            if (!attributes.backgroundColor) {
+                                return {};
+                            }
+                            return {
+                                style: `background-color: ${attributes.backgroundColor}`,
+                            };
+                        },
+                    },
+                };
+            },
+        });
+
+        // Custom TableHeader extension to support backgroundColor attribute
+        const CustomTableHeader = TableHeader.extend({
+            addAttributes() {
+                return {
+                    ...this.parent?.(),
+                    backgroundColor: {
+                        default: null,
+                        parseHTML: element => element.style.backgroundColor || null,
+                        renderHTML: attributes => {
+                            if (!attributes.backgroundColor) {
+                                return {};
+                            }
+                            return {
+                                style: `background-color: ${attributes.backgroundColor}`,
+                            };
+                        },
+                    },
+                };
+            },
+        });
 
         // Custom Font Size extension by extending TextStyle
         const FontSize = TextStyle.extend({
@@ -332,6 +575,16 @@
                             }
                             return {
                                 style: 'margin-left: auto; margin-right: auto; display: block; clear: both;'
+                            };
+                        }
+                    },
+                    'data-image-id': {
+                        default: null,
+                        parseHTML: element => element.getAttribute('data-image-id') || null,
+                        renderHTML: attributes => {
+                            if (!attributes['data-image-id']) return {};
+                            return {
+                                'data-image-id': attributes['data-image-id']
                             };
                         }
                     }
@@ -638,7 +891,8 @@
                         </div>
                         <div class="flex items-center gap-2 pt-1.5 border-t border-gray-100 dark:border-slate-700">
                             <span class="text-[10px] text-gray-500 dark:text-slate-400">Custom:</span>
-                            <input type="color" id="custom-color-input-${id}" class="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded" />
+                            <input type="color" id="custom-color-input-${id}" class="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded" value="#000000" />
+                            <input type="text" id="custom-color-hex-${id}" class="w-16 px-1.5 py-0.5 border border-gray-200 dark:border-slate-700 rounded text-[10px] bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 font-mono focus:outline-none focus:border-indigo-500" value="#000000" placeholder="#hex" />
                             <button type="button" data-color-clear class="text-[10px] text-red-500 hover:underline ml-auto">Clear</button>
                         </div>
                     </div>
@@ -665,7 +919,8 @@
                         </div>
                         <div class="flex items-center gap-2 pt-1.5 border-t border-gray-100 dark:border-slate-700">
                             <span class="text-[10px] text-gray-500 dark:text-slate-400">Custom:</span>
-                            <input type="color" id="custom-highlight-input-${id}" class="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded" />
+                            <input type="color" id="custom-highlight-input-${id}" class="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded" value="#ffff00" />
+                            <input type="text" id="custom-highlight-hex-${id}" class="w-16 px-1.5 py-0.5 border border-gray-200 dark:border-slate-700 rounded text-[10px] bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 font-mono focus:outline-none focus:border-indigo-500" value="#ffff00" placeholder="#hex" />
                             <button type="button" data-highlight-clear class="text-[10px] text-red-500 hover:underline ml-auto">Clear</button>
                         </div>
                     </div>
@@ -722,10 +977,46 @@
 
                 <span class="w-px h-5 bg-gray-200 dark:bg-slate-800 mx-1"></span>
 
-                <!-- Link & Image Dropdown -->
-                <button type="button" data-cmd="link" class="p-1.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-100 transition-colors" title="Insert Link">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                </button>
+                <!-- Link Dropdown -->
+                <div class="relative dropdown-container">
+                    <button type="button" data-dropdown-toggle="link-menu-${id}" class="p-1.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-100 transition-colors flex items-center gap-0.5" title="Link Controls">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="link-menu-${id}" class="absolute left-0 mt-1 w-64 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 p-3 hidden">
+                        <div class="flex flex-col gap-3">
+                            <!-- URL Input -->
+                            <div class="flex flex-col gap-1">
+                                <label for="link-url-${id}" class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Link URL</label>
+                                <input type="text" id="link-url-${id}" class="w-full px-2.5 py-1.5 border border-gray-200 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="https://example.com" />
+                            </div>
+
+                            <!-- Follow Status (Do Follow vs Don't Follow) -->
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Search Engine Relation</span>
+                                <div class="flex border border-gray-200 dark:border-slate-700 rounded overflow-hidden bg-gray-50 dark:bg-slate-900 text-[11px] leading-none">
+                                    <button type="button" id="link-rel-nofollow-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150">Don't Follow</button>
+                                    <button type="button" id="link-rel-dofollow-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Do Follow</button>
+                                </div>
+                            </div>
+
+                            <!-- Open in (Same Page vs Another Page) -->
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Open In</span>
+                                <div class="flex border border-gray-200 dark:border-slate-700 rounded overflow-hidden bg-gray-50 dark:bg-slate-900 text-[11px] leading-none">
+                                    <button type="button" id="link-target-self-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150">Same Page</button>
+                                    <button type="button" id="link-target-blank-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Another Page</button>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-slate-700 mt-1">
+                                <button type="button" id="link-submit-${id}" class="flex-1 py-1.5 rounded bg-indigo-650 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors duration-150 select-none text-center">Apply</button>
+                                <button type="button" id="link-unlink-${id}" class="flex-1 py-1.5 rounded border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-650 dark:text-red-400 font-semibold text-xs transition-colors duration-150 select-none text-center">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Select Image Dropdown -->
                 <div class="relative dropdown-container">
@@ -752,22 +1043,115 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div id="table-menu-${id}" class="absolute left-0 mt-1 w-44 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 py-1 hidden">
-                        <button type="button" data-cmd="insertTable" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650 flex items-center gap-2">
-                            <span>➕</span> Insert Table (3x3)
-                        </button>
-                        <div class="border-t border-gray-100 dark:border-slate-700 my-1"></div>
-                        <button type="button" data-cmd="addColumnBefore" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650">Add Column Before</button>
-                        <button type="button" data-cmd="addColumnAfter" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650">Add Column After</button>
-                        <button type="button" data-cmd="deleteColumn" class="w-full text-left px-3 py-1.5 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20">Delete Column</button>
-                        <div class="border-t border-gray-100 dark:border-slate-700 my-1"></div>
-                        <button type="button" data-cmd="addRowBefore" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650">Add Row Before</button>
-                        <button type="button" data-cmd="addRowAfter" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-650">Add Row After</button>
-                        <button type="button" data-cmd="deleteRow" class="w-full text-left px-3 py-1.5 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20">Delete Row</button>
-                        <div class="border-t border-gray-100 dark:border-slate-700 my-1"></div>
-                        <button type="button" data-cmd="deleteTable" class="w-full text-left px-3 py-1.5 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2">
-                            <span>🗑️</span> Delete Table
-                        </button>
+                    <div id="table-menu-${id}" class="absolute left-0 mt-1 w-64 rounded-md shadow-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 p-2 hidden">
+                        <!-- Insert Table Section (visible when not in a table) -->
+                        <div class="table-insert-section flex flex-col select-none p-1">
+                            <div class="table-grid-label text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-2 text-center truncate">Insert Table</div>
+                            <div class="table-grid-container grid grid-cols-10 gap-1 mb-1 bg-gray-50 dark:bg-slate-900/50 p-1.5 rounded-lg border border-gray-150 dark:border-slate-800/80">
+                                ${Array.from({ length: 80 }, (_, index) => {
+                                    const row = Math.floor(index / 10) + 1;
+                                    const col = (index % 10) + 1;
+                                    return '<div data-row="' + row + '" data-col="' + col + '" class="table-grid-cell"></div>';
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Edit Table Section (visible when in a table) -->
+                        <div class="table-edit-section hidden flex flex-col">
+                            <!-- Drag Rows Hint -->
+                            <div class="px-2 py-1 flex items-center gap-1.5 select-none text-[10px] text-gray-400 dark:text-slate-500">
+                                <svg class="w-3 h-3 text-gray-300 dark:text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8.5 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm-5 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm-5 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                                </svg>
+                                <span>Drag rows using the left handle.</span>
+                            </div>
+                            <div class="border-t border-gray-100 dark:border-slate-700 my-1.5"></div>
+
+                            <!-- Cell Background Color Row -->
+                            <div class="flex items-center justify-between px-2 py-1">
+                                <div class="flex items-center gap-2">
+                                    <label for="cell-color-input-${id}" class="w-4 h-4 rounded border border-gray-300 dark:border-slate-600 flex-shrink-0 cursor-pointer block relative overflow-hidden">
+                                        <input type="color" id="cell-color-input-${id}" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" value="#ffffff" />
+                                        <span id="cell-color-preview-${id}" class="absolute inset-0 bg-white"></span>
+                                    </label>
+                                    <span class="text-xs text-gray-750 dark:text-slate-200">Cell background color</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[9px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">HEX</span>
+                                    <input type="text" id="cell-color-hex-${id}" class="w-20 px-1.5 py-0.5 border border-gray-200 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 font-mono focus:outline-none focus:border-indigo-500" value="#ffffff" placeholder="#ffffff" />
+                                </div>
+                            </div>
+
+                            <!-- Row Background Color Row -->
+                            <div class="flex items-center justify-between px-2 py-1">
+                                <div class="flex items-center gap-2">
+                                    <label for="row-color-input-${id}" class="w-4 h-4 rounded border border-gray-300 dark:border-slate-600 flex-shrink-0 cursor-pointer block relative overflow-hidden">
+                                        <input type="color" id="row-color-input-${id}" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" value="#ffffff" />
+                                        <span id="row-color-preview-${id}" class="absolute inset-0 bg-white"></span>
+                                    </label>
+                                    <span class="text-xs text-gray-755 dark:text-slate-200">Row background color</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[9px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">HEX</span>
+                                    <input type="text" id="row-color-hex-${id}" class="w-20 px-1.5 py-0.5 border border-gray-200 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 font-mono focus:outline-none focus:border-indigo-500" value="#ffffff" placeholder="#ffffff" />
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-100 dark:border-slate-700 my-1.5"></div>
+
+                            <!-- Columns Actions -->
+                            <button type="button" data-cmd="addColumnBefore" class="w-full text-left px-2 py-1 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                                    <path d="M9 3v18"/>
+                                </svg>
+                                <span>Add Column Before</span>
+                            </button>
+                            <button type="button" data-cmd="addColumnAfter" class="w-full text-left px-2 py-1 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                                    <path d="M9 3v18"/>
+                                </svg>
+                                <span>Add Column After</span>
+                            </button>
+                            <button type="button" data-cmd="deleteColumn" class="w-full text-left px-2 py-1 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-red-500/80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"/>
+                                </svg>
+                                <span>Delete Column</span>
+                            </button>
+                            <div class="border-t border-gray-100 dark:border-slate-700 my-1.5"></div>
+
+                            <!-- Rows Actions -->
+                            <button type="button" data-cmd="addRowBefore" class="w-full text-left px-2 py-1 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                                    <path d="M3 9h18"/>
+                                </svg>
+                                <span>Add Row Before</span>
+                            </button>
+                            <button type="button" data-cmd="addRowAfter" class="w-full text-left px-2 py-1 text-xs text-gray-750 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                                    <path d="M3 9h18"/>
+                                </svg>
+                                <span>Add Row After</span>
+                            </button>
+                            <button type="button" data-cmd="deleteRow" class="w-full text-left px-2 py-1 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-red-500/80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"/>
+                                </svg>
+                                <span>Delete Row</span>
+                            </button>
+                            <div class="border-t border-gray-100 dark:border-slate-700 my-1.5"></div>
+
+                            <!-- Delete Table Button -->
+                            <button type="button" data-cmd="deleteTable" class="w-full text-left px-2 py-1.5 text-xs text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors duration-150 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <span>Delete Table</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <span class="w-px h-5 bg-gray-200 dark:bg-slate-800 mx-1"></span>
@@ -850,7 +1234,7 @@
                             HTMLAttributes: {
                                 class: 'text-indigo-600 dark:text-indigo-400 hover:underline',
                                 target: '_blank',
-                                rel: 'noopener noreferrer'
+                                rel: 'nofollow noopener noreferrer'
                             }
                         },
                         underline: {}
@@ -860,19 +1244,19 @@
                             class: 'rounded-lg max-w-full my-4 mx-auto block shadow-sm border border-gray-200 dark:border-slate-800'
                         }
                     }),
-                    Table.configure({
+                    CustomTable.configure({
                         resizable: true,
                         HTMLAttributes: {
                             class: 'border-collapse border border-gray-300 dark:border-slate-800 my-4 w-full'
                         }
                     }),
                     TableRow,
-                    TableCell.configure({
+                    CustomTableCell.configure({
                         HTMLAttributes: {
                             class: 'border border-gray-300 dark:border-slate-800 px-4 py-2 text-sm'
                         }
                     }),
-                    TableHeader.configure({
+                    CustomTableHeader.configure({
                         HTMLAttributes: {
                             class: 'border border-gray-300 dark:border-slate-800 px-4 py-2 text-sm bg-gray-50 dark:bg-slate-800 font-bold'
                         }
@@ -1331,13 +1715,34 @@
 
         // Dropdown toggle logic
         const dropdownToggles = container.querySelectorAll('[data-dropdown-toggle]');
-        const dropdownMenus = container.querySelectorAll('[id^="image-menu-"], [id^="table-menu-"], [id^="blocks-menu-"], [id^="color-menu-"], [id^="highlight-menu-"], [id^="bullet-style-menu-"], [id^="fontsize-menu-"]');
+        const dropdownMenus = container.querySelectorAll('[id^="image-menu-"], [id^="table-menu-"], [id^="blocks-menu-"], [id^="color-menu-"], [id^="highlight-menu-"], [id^="bullet-style-menu-"], [id^="fontsize-menu-"], [id^="link-menu-"]');
 
         function closeAllDropdowns() {
             dropdownMenus.forEach(menu => menu.classList.add('hidden'));
         }
 
         dropdownToggles.forEach(toggle => {
+            // Save editor selection on mousedown, BEFORE the click blurs the editor
+            toggle.addEventListener('mousedown', () => {
+                const targetId = toggle.getAttribute('data-dropdown-toggle');
+                if (targetId && targetId.startsWith('table-menu-')) {
+                    // Store it in a variable accessible by the table coloring section
+                    const { selection } = editor.state;
+                    let $pos = selection.$from;
+                    let inTable = false;
+                    for (let i = $pos.depth; i > 0; i--) {
+                        const name = $pos.node(i).type.name;
+                        if (name === 'tableCell' || name === 'tableHeader') { inTable = true; break; }
+                    }
+                    if (inTable) {
+                        window[`__tiptapTableSel_${id}`] = selection;
+                    }
+                } else if (targetId && targetId.startsWith('link-menu-')) {
+                    // Store it in a variable accessible by the link section
+                    window[`__tiptapLinkSel_${id}`] = editor.state.selection;
+                }
+            });
+
             toggle.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (codeViewActive) return;
@@ -1348,6 +1753,125 @@
                     closeAllDropdowns();
                     if (isHidden) {
                         targetMenu.classList.remove('hidden');
+                        
+                        // Contextual Table Menu display: Insert vs. Edit
+                        if (targetId.startsWith('table-menu-')) {
+                            const { selection } = editor.state;
+                            let inTable = false;
+                            let cellDepth = -1;
+                            let rowDepth = -1;
+                            let $pos = selection.$from;
+                            for (let i = $pos.depth; i > 0; i--) {
+                                const name = $pos.node(i).type.name;
+                                if (name === 'tableCell' || name === 'tableHeader') {
+                                    inTable = true;
+                                    cellDepth = i;
+                                }
+                                if (name === 'tableRow') {
+                                    rowDepth = i;
+                                }
+                            }
+
+                            const insertSection = targetMenu.querySelector('.table-insert-section');
+                            const editSection = targetMenu.querySelector('.table-edit-section');
+
+                            if (inTable) {
+                                if (insertSection) insertSection.classList.add('hidden');
+                                if (editSection) editSection.classList.remove('hidden');
+
+                                // Retrieve current cell and row background color
+                                let currentCellColor = '#ffffff';
+                                let currentRowColor = '#ffffff';
+
+                                if (cellDepth !== -1) {
+                                    const cellNode = $pos.node(cellDepth);
+                                    if (cellNode.attrs.backgroundColor) {
+                                        currentCellColor = cellNode.attrs.backgroundColor;
+                                    }
+                                }
+
+                                if (rowDepth !== -1) {
+                                    const rowNode = $pos.node(rowDepth);
+                                    if (rowNode.childCount > 0) {
+                                        const firstCell = rowNode.child(0);
+                                        if (firstCell.attrs.backgroundColor) {
+                                            currentRowColor = firstCell.attrs.backgroundColor;
+                                        }
+                                    }
+                                }
+
+                                // Helper to format value to hex for standard input type=color
+                                const normalizeToHex = (color) => {
+                                    if (!color) return '#ffffff';
+                                    if (color.startsWith('#')) {
+                                        if (color.length === 4) {
+                                            return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+                                        }
+                                        return color;
+                                    }
+                                    if (color.startsWith('rgb')) {
+                                        const rgb = color.match(/\d+/g);
+                                        if (rgb && rgb.length >= 3) {
+                                            const r = parseInt(rgb[0]).toString(16).padStart(2, '0');
+                                            const g = parseInt(rgb[1]).toString(16).padStart(2, '0');
+                                            const b = parseInt(rgb[2]).toString(16).padStart(2, '0');
+                                            return `#${r}${g}${b}`;
+                                        }
+                                    }
+                                    return '#ffffff';
+                                };
+
+                                const hexCellColor = normalizeToHex(currentCellColor);
+                                const hexRowColor = normalizeToHex(currentRowColor);
+
+                                const cellInput = targetMenu.querySelector(`#cell-color-input-${id}`);
+                                const cellHex = targetMenu.querySelector(`#cell-color-hex-${id}`);
+                                const cellPreview = targetMenu.querySelector(`#cell-color-preview-${id}`);
+
+                                const rowInput = targetMenu.querySelector(`#row-color-input-${id}`);
+                                const rowHex = targetMenu.querySelector(`#row-color-hex-${id}`);
+                                const rowPreview = targetMenu.querySelector(`#row-color-preview-${id}`);
+
+                                if (cellInput) cellInput.value = hexCellColor;
+                                if (cellHex) cellHex.value = currentCellColor || '';
+                                if (cellPreview) cellPreview.style.backgroundColor = currentCellColor || 'transparent';
+
+                                if (rowInput) rowInput.value = hexRowColor;
+                                if (rowHex) rowHex.value = currentRowColor || '';
+                                if (rowPreview) rowPreview.style.backgroundColor = currentRowColor || 'transparent';
+                            } else {
+                                if (insertSection) insertSection.classList.remove('hidden');
+                                if (editSection) editSection.classList.add('hidden');
+                            }
+                        } else if (targetId.startsWith('link-menu-')) {
+                            // Query active link details
+                            const linkAttrs = editor.getAttributes('link');
+                            const urlInput = targetMenu.querySelector(`#link-url-${id}`);
+
+                            if (urlInput) {
+                                urlInput.value = linkAttrs.href || '';
+                            }
+
+                            // Determine activeRel and activeTarget
+                            let activeRel = 'nofollow'; // Default dont follow
+                            let activeTarget = '_blank'; // Default another page (to open outside by default)
+                            if (linkAttrs.href) {
+                                const rel = linkAttrs.rel || '';
+                                activeRel = rel.includes('nofollow') ? 'nofollow' : 'dofollow';
+                                activeTarget = (linkAttrs.target === '_self') ? '_self' : '_blank';
+                            }
+
+                            // Sync button UI classes via exposed helper
+                            const updateFn = window[`__tiptapLinkMenuUpdate_${id}`];
+                            if (updateFn) {
+                                updateFn(activeRel, activeTarget);
+                            }
+
+                            // Focus URL input after a short delay so browser focuses it properly
+                            setTimeout(() => {
+                                if (urlInput) urlInput.focus();
+                            }, 50);
+                        }
                     }
                 }
             });
@@ -1460,15 +1984,6 @@
                 else if (cmd === 'addRowAfter') editor.chain().focus().addRowAfter().run();
                 else if (cmd === 'deleteRow') editor.chain().focus().deleteRow().run();
                 else if (cmd === 'deleteTable') editor.chain().focus().deleteTable().run();
-                else if (cmd === 'link') {
-                    const previousUrl = editor.getAttributes('link').href;
-                    const url = window.prompt('Enter Link URL:', previousUrl || 'https://');
-                    if (url === '') {
-                        editor.chain().focus().extendMarkRange('link').unsetLink().run();
-                    } else if (url) {
-                        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-                    }
-                }
                 else if (cmd === 'insertSlider') {
                     if (codeViewActive) return;
                     pendingUploadType = 'slider';
@@ -1504,6 +2019,228 @@
             });
         });
 
+        // Table Size Grid Selector action handlers
+        const tableMenu = container.querySelector(`#table-menu-${id}`);
+        if (tableMenu) {
+            const gridContainer = tableMenu.querySelector('.table-grid-container');
+            const gridLabel = tableMenu.querySelector('.table-grid-label');
+            const cells = tableMenu.querySelectorAll('.table-grid-cell');
+            
+            if (gridContainer && gridLabel && cells.length > 0) {
+                cells.forEach(cell => {
+                    const row = parseInt(cell.getAttribute('data-row'));
+                    const col = parseInt(cell.getAttribute('data-col'));
+                    
+                    cell.addEventListener('mouseenter', () => {
+                        if (codeViewActive) return;
+                        
+                        // Highlight all cells from (1,1) up to (col, row)
+                        cells.forEach(c => {
+                            const cRow = parseInt(c.getAttribute('data-row'));
+                            const cCol = parseInt(c.getAttribute('data-col'));
+                            
+                            if (cRow <= row && cCol <= col) {
+                                c.classList.add('active');
+                            } else {
+                                c.classList.remove('active');
+                            }
+                        });
+                        
+                        // Update label
+                        gridLabel.textContent = `Insert Table: ${col} x ${row}`;
+                    });
+                    
+                    cell.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (codeViewActive) return;
+                        
+                        // Insert table
+                        editor.chain().focus().insertTable({ rows: row, cols: col, withHeaderRow: true }).run();
+                        closeAllDropdowns();
+                    });
+                });
+
+                gridContainer.addEventListener('mouseleave', () => {
+                    // Reset all cells
+                    cells.forEach(c => {
+                        c.classList.remove('active');
+                    });
+                    gridLabel.textContent = 'Insert Table';
+                });
+            }
+
+            // Table Coloring Event Handlers
+            let savedTableSelection = null;
+
+            function saveTableSelection() {
+                // First try the selection saved at dropdown-open mousedown (most reliable)
+                const windowSel = window[`__tiptapTableSel_${id}`];
+                if (windowSel) {
+                    savedTableSelection = windowSel;
+                    return;
+                }
+                // Fallback: try the current editor selection
+                const { selection } = editor.state;
+                let $pos = selection.$from;
+                let inTable = false;
+                for (let i = $pos.depth; i > 0; i--) {
+                    const name = $pos.node(i).type.name;
+                    if (name === 'tableCell' || name === 'tableHeader') { inTable = true; break; }
+                }
+                if (inTable) {
+                    savedTableSelection = selection;
+                }
+            }
+
+            function applyTableColor(color, mode) {
+                // Best source: selection saved at dropdown-open mousedown
+                const sel = window[`__tiptapTableSel_${id}`] || savedTableSelection;
+                if (sel) {
+                    try {
+                        const tr = editor.state.tr.setSelection(sel);
+                        editor.view.dispatch(tr);
+                    } catch(err) {
+                        // Selection may be stale if document changed - ignore and proceed
+                    }
+                }
+                if (mode === 'cell') {
+                    editor.chain().focus().setCellBackgroundColor(color).run();
+                } else if (mode === 'row') {
+                    editor.chain().focus().setRowBackgroundColor(color).run();
+                }
+            }
+
+            // Cell color picker handling
+            const cellColorInput = tableMenu.querySelector(`#cell-color-input-${id}`);
+            const cellColorHex = tableMenu.querySelector(`#cell-color-hex-${id}`);
+            const cellColorPreview = tableMenu.querySelector(`#cell-color-preview-${id}`);
+
+            if (cellColorInput && cellColorHex) {
+                cellColorInput.addEventListener('mousedown', () => {
+                    saveTableSelection();
+                });
+
+                cellColorInput.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    const color = e.target.value;
+                    cellColorHex.value = color;
+                    if (cellColorPreview) cellColorPreview.style.backgroundColor = color;
+                    applyTableColor(color, 'cell');
+                });
+
+                cellColorInput.addEventListener('change', (e) => {
+                    const color = e.target.value;
+                    applyTableColor(color, 'cell');
+                });
+
+                cellColorHex.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                cellColorHex.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    saveTableSelection();
+                });
+
+                cellColorHex.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    let value = e.target.value.trim();
+
+                    if (value === '') {
+                        if (cellColorPreview) cellColorPreview.style.backgroundColor = 'transparent';
+                        applyTableColor(null, 'cell');
+                        return;
+                    }
+
+                    if (value && !value.startsWith('#') && /^[0-9A-Fa-f]{3,6}$/.test(value)) {
+                        value = '#' + value;
+                    }
+
+                    if (/^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(value)) {
+                        let standardColor = value;
+                        if (value.length === 4) {
+                            standardColor = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+                        }
+                        cellColorInput.value = standardColor;
+                        if (cellColorPreview) cellColorPreview.style.backgroundColor = standardColor;
+                        applyTableColor(value, 'cell');
+                    }
+                });
+
+                cellColorHex.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeAllDropdowns();
+                        editor.commands.focus();
+                    }
+                });
+            }
+
+            // Row color picker handling
+            const rowColorInput = tableMenu.querySelector(`#row-color-input-${id}`);
+            const rowColorHex = tableMenu.querySelector(`#row-color-hex-${id}`);
+            const rowColorPreview = tableMenu.querySelector(`#row-color-preview-${id}`);
+
+            if (rowColorInput && rowColorHex) {
+                rowColorInput.addEventListener('mousedown', () => {
+                    saveTableSelection();
+                });
+
+                rowColorInput.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    const color = e.target.value;
+                    rowColorHex.value = color;
+                    if (rowColorPreview) rowColorPreview.style.backgroundColor = color;
+                    applyTableColor(color, 'row');
+                });
+
+                rowColorInput.addEventListener('change', (e) => {
+                    const color = e.target.value;
+                    applyTableColor(color, 'row');
+                });
+
+                rowColorHex.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                rowColorHex.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    saveTableSelection();
+                });
+
+                rowColorHex.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    let value = e.target.value.trim();
+
+                    if (value === '') {
+                        if (rowColorPreview) rowColorPreview.style.backgroundColor = 'transparent';
+                        applyTableColor(null, 'row');
+                        return;
+                    }
+
+                    if (value && !value.startsWith('#') && /^[0-9A-Fa-f]{3,6}$/.test(value)) {
+                        value = '#' + value;
+                    }
+
+                    if (/^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(value)) {
+                        let standardColor = value;
+                        if (value.length === 4) {
+                            standardColor = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+                        }
+                        rowColorInput.value = standardColor;
+                        if (rowColorPreview) rowColorPreview.style.backgroundColor = standardColor;
+                        applyTableColor(value, 'row');
+                    }
+                });
+
+                rowColorHex.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeAllDropdowns();
+                        editor.commands.focus();
+                    }
+                });
+            }
+        }
+
         // Bullet list style menu action handlers
         const bulletStyleMenu = container.querySelector(`#bullet-style-menu-${id}`);
         if (bulletStyleMenu) {
@@ -1526,6 +2263,165 @@
             });
         }
 
+        // Link Menu event handlers
+        const linkMenu = container.querySelector(`#link-menu-${id}`);
+        if (linkMenu) {
+            let activeLinkRel = 'nofollow';
+            let activeLinkTarget = '_blank';
+
+            const btnNofollow = linkMenu.querySelector(`#link-rel-nofollow-${id}`);
+            const btnDofollow = linkMenu.querySelector(`#link-rel-dofollow-${id}`);
+            const btnTargetSelf = linkMenu.querySelector(`#link-target-self-${id}`);
+            const btnTargetBlank = linkMenu.querySelector(`#link-target-blank-${id}`);
+
+            function updateLinkMenuButtons() {
+                // Rel buttons
+                if (btnNofollow && btnDofollow) {
+                    if (activeLinkRel === 'nofollow') {
+                        btnNofollow.className = "flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150";
+                        btnDofollow.className = "flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700";
+                    } else {
+                        btnNofollow.className = "flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150";
+                        btnDofollow.className = "flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700";
+                    }
+                }
+                // Target buttons
+                if (btnTargetSelf && btnTargetBlank) {
+                    if (activeLinkTarget === '_self') {
+                        btnTargetSelf.className = "flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150";
+                        btnTargetBlank.className = "flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700";
+                    } else {
+                        btnTargetSelf.className = "flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150";
+                        btnTargetBlank.className = "flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700";
+                    }
+                }
+            }
+
+            if (btnNofollow) {
+                btnNofollow.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    activeLinkRel = 'nofollow';
+                    updateLinkMenuButtons();
+                });
+            }
+            if (btnDofollow) {
+                btnDofollow.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    activeLinkRel = 'dofollow';
+                    updateLinkMenuButtons();
+                });
+            }
+            if (btnTargetSelf) {
+                btnTargetSelf.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    activeLinkTarget = '_self';
+                    updateLinkMenuButtons();
+                });
+            }
+            if (btnTargetBlank) {
+                btnTargetBlank.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    activeLinkTarget = '_blank';
+                    updateLinkMenuButtons();
+                });
+            }
+
+            const linkSubmit = linkMenu.querySelector(`#link-submit-${id}`);
+            const linkUnlink = linkMenu.querySelector(`#link-unlink-${id}`);
+            const linkUrlInput = linkMenu.querySelector(`#link-url-${id}`);
+
+            if (linkSubmit && linkUnlink && linkUrlInput) {
+                linkSubmit.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (codeViewActive) return;
+
+                    let url = linkUrlInput.value.trim();
+                    if (url) {
+                        if (!/^https?:\/\//i.test(url) && !url.startsWith('/') && !url.startsWith('#') && !url.startsWith('mailto:')) {
+                            url = 'https://' + url;
+                        }
+
+                        const targetVal = activeLinkTarget;
+                        let relVal = '';
+                        if (activeLinkRel === 'nofollow') {
+                            relVal = targetVal === '_blank' ? 'nofollow noopener noreferrer' : 'nofollow';
+                        } else {
+                            relVal = targetVal === '_blank' ? 'noopener noreferrer' : '';
+                        }
+
+                        const sel = window[`__tiptapLinkSel_${id}`];
+                        if (sel) {
+                            try {
+                                const tr = editor.state.tr.setSelection(sel);
+                                editor.view.dispatch(tr);
+                            } catch(err) {
+                                // Ignore stale selection
+                            }
+                        }
+
+                        editor.chain().focus().extendMarkRange('link').setLink({ 
+                            href: url, 
+                            target: targetVal, 
+                            rel: relVal || null
+                        }).run();
+                    } else {
+                        const sel = window[`__tiptapLinkSel_${id}`];
+                        if (sel) {
+                            try {
+                                const tr = editor.state.tr.setSelection(sel);
+                                editor.view.dispatch(tr);
+                            } catch(err) {
+                                // Ignore stale selection
+                            }
+                        }
+                        editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                    }
+                    closeAllDropdowns();
+                });
+
+                linkUnlink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (codeViewActive) return;
+
+                    const sel = window[`__tiptapLinkSel_${id}`];
+                    if (sel) {
+                        try {
+                            const tr = editor.state.tr.setSelection(sel);
+                            editor.view.dispatch(tr);
+                        } catch(err) {
+                            // Ignore stale selection
+                        }
+                    }
+                    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                    closeAllDropdowns();
+                });
+
+                linkUrlInput.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                linkUrlInput.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+                linkUrlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        linkSubmit.click();
+                    }
+                });
+            }
+
+            // Expose a helper to update buttons from outside (when opening the dropdown)
+            window[`__tiptapLinkMenuUpdate_${id}`] = function(rel, target) {
+                activeLinkRel = rel;
+                activeLinkTarget = target;
+                updateLinkMenuButtons();
+            };
+        }
+
         // Color Picker actions
         const colorMenu = container.querySelector(`#color-menu-${id}`);
         if (colorMenu) {
@@ -1539,13 +2435,38 @@
                 });
             });
             const customColorInput = colorMenu.querySelector(`#custom-color-input-${id}`);
-            if (customColorInput) {
+            const customColorHex = colorMenu.querySelector(`#custom-color-hex-${id}`);
+            if (customColorInput && customColorHex) {
                 customColorInput.addEventListener('input', (e) => {
                     if (codeViewActive) return;
-                    editor.chain().focus().setColor(e.target.value).run();
+                    const color = e.target.value;
+                    customColorHex.value = color;
+                    editor.chain().focus().setColor(color).run();
                 });
                 customColorInput.addEventListener('change', () => {
                     closeAllDropdowns();
+                });
+                customColorHex.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    let value = e.target.value.trim();
+                    if (value && !value.startsWith('#') && /^[0-9A-Fa-f]{3,6}$/.test(value)) {
+                        value = '#' + value;
+                    }
+                    if (/^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(value)) {
+                        let standardColor = value;
+                        if (value.length === 4) {
+                            standardColor = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+                        }
+                        customColorInput.value = standardColor;
+                        editor.chain().focus().setColor(value).run();
+                    }
+                });
+                customColorHex.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeAllDropdowns();
+                        editor.commands.focus();
+                    }
                 });
             }
             const colorClear = colorMenu.querySelector('[data-color-clear]');
@@ -1597,13 +2518,38 @@
                 });
             });
             const customHighlightInput = highlightMenu.querySelector(`#custom-highlight-input-${id}`);
-            if (customHighlightInput) {
+            const customHighlightHex = highlightMenu.querySelector(`#custom-highlight-hex-${id}`);
+            if (customHighlightInput && customHighlightHex) {
                 customHighlightInput.addEventListener('input', (e) => {
                     if (codeViewActive) return;
-                    editor.chain().focus().setHighlight({ color: e.target.value }).run();
+                    const color = e.target.value;
+                    customHighlightHex.value = color;
+                    editor.chain().focus().setHighlight({ color }).run();
                 });
                 customHighlightInput.addEventListener('change', () => {
                     closeAllDropdowns();
+                });
+                customHighlightHex.addEventListener('input', (e) => {
+                    if (codeViewActive) return;
+                    let value = e.target.value.trim();
+                    if (value && !value.startsWith('#') && /^[0-9A-Fa-f]{3,6}$/.test(value)) {
+                        value = '#' + value;
+                    }
+                    if (/^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(value)) {
+                        let standardColor = value;
+                        if (value.length === 4) {
+                            standardColor = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+                        }
+                        customHighlightInput.value = standardColor;
+                        editor.chain().focus().setHighlight({ color: value }).run();
+                    }
+                });
+                customHighlightHex.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        closeAllDropdowns();
+                        editor.commands.focus();
+                    }
                 });
             }
             const highlightClear = highlightMenu.querySelector('[data-highlight-clear]');

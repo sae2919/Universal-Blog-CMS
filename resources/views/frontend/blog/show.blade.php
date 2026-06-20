@@ -3,8 +3,29 @@
 @section('meta_title', $post->meta_title . ' — ' . \App\Models\Setting::getValue('site_name'))
 @section('meta_description', $post->meta_description ?? $post->excerpt)
 @section('meta_keywords', $post->meta_keywords)
-@section('og_image', $post->og_image ? asset('storage/' . $post->og_image) : '')
+@php
+    // og_image: use og_image field first, then featured_image, then site default, then favicon
+    $_ogImage = $post->og_image
+        ? asset('storage/' . $post->og_image)
+        : ($post->featured_image
+            ? asset('storage/' . $post->featured_image)
+            : (\App\Models\Setting::getValue('default_og_image')
+                ? asset('storage/' . \App\Models\Setting::getValue('default_og_image'))
+                : asset('favicon.ico')));
+@endphp
+@section('og_image', $_ogImage)
 @section('og_type', 'article')
+
+{{-- Article-specific Open Graph tags for social sharing --}}
+@push('schema')
+<meta property="article:published_time" content="{{ $post->published_at->toIso8601String() }}">
+<meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}">
+<meta property="article:author" content="{{ $post->author->name }}">
+<meta property="article:section" content="{{ $post->category->name }}">
+@php foreach($post->tags as $_tag): @endphp
+<meta property="article:tag" content="{{ $_tag->name }}">
+@php endforeach; @endphp
+@endpush
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" />
@@ -66,24 +87,84 @@
 </style>
 @endpush
 
+@php
+    // ---- Build all JSON-LD schemas in PHP (avoids Blade @if/@foreach inside @push stacks) ----
+
+    // 1. BlogPosting
+    $_ogUrl = url()->current();
+    $_imageUrl = $post->og_image
+        ? asset('storage/' . $post->og_image)
+        : ($post->featured_image ? asset('storage/' . $post->featured_image) : asset('favicon.ico'));
+    $_logoUrl = \App\Models\Setting::getValue('site_favicon')
+        ? asset('storage/' . \App\Models\Setting::getValue('site_favicon'))
+        : asset('favicon.ico');
+
+    $_blogPostingSchema = json_encode([
+        '@context'          => 'https://schema.org',
+        '@type'             => $post->schema_type ?? 'BlogPosting',
+        'mainEntityOfPage'  => ['@type' => 'WebPage', '@id' => $_ogUrl],
+        'headline'          => $post->title,
+        'image'             => ['@type' => 'ImageObject', 'url' => $_imageUrl, 'width' => 1200, 'height' => 630],
+        'author'            => ['@type' => 'Person', 'name' => $post->author->name],
+        'publisher'         => [
+            '@type' => 'Organization',
+            'name'  => \App\Models\Setting::getValue('site_name'),
+            'logo'  => ['@type' => 'ImageObject', 'url' => $_logoUrl],
+        ],
+        'datePublished'     => $post->published_at->toIso8601String(),
+        'dateModified'      => $post->updated_at->toIso8601String(),
+        'description'       => strip_tags($post->excerpt ?? ''),
+        'url'               => $_ogUrl,
+        'keywords'          => $post->meta_keywords,
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+    // 2. BreadcrumbList
+    $_breadcrumbSchema = json_encode([
+        '@context'        => 'https://schema.org',
+        '@type'           => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => route('home')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => $post->category->name, 'item' => route('blog.category', $post->category->slug)],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $post->title, 'item' => $_ogUrl],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+    // 3. FAQPage (only if FAQs exist)
+    $_faqSchema = '';
+    if (!empty($post->faqs) && count($post->faqs) > 0) {
+        $faqItems = [];
+        foreach ($post->faqs as $faq) {
+            if (!empty($faq['question'])) {
+                $faqItems[] = [
+                    '@type' => 'Question',
+                    'name'  => strip_tags($faq['question']),
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($faq['answer'] ?? '')],
+                ];
+            }
+        }
+        if (!empty($faqItems)) {
+            $_faqSchema = json_encode([
+                '@context'   => 'https://schema.org',
+                '@type'      => 'FAQPage',
+                'mainEntity' => $faqItems,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        }
+    }
+@endphp
+
 @push('schema')
-<script type="application/ld+json">
-{
-  "@@context": "https://schema.org",
-  "@type": "{{ $post->schema_type ?? 'BlogPosting' }}",
-  "headline": "{{ $post->title }}",
-  "image": "{{ $post->featured_image ? asset('storage/' . $post->featured_image) : '' }}",
-  "author": { "@type": "Person", "name": "{{ $post->author->name }}" },
-  "publisher": {
-    "@type": "Organization",
-    "name": "{{ \App\Models\Setting::getValue('site_name') }}"
-  },
-  "datePublished": "{{ $post->published_at->toIso8601String() }}",
-  "dateModified": "{{ $post->updated_at->toIso8601String() }}",
-  "description": "{{ $post->excerpt }}"
-}
-</script>
+{{-- BlogPosting Schema with publisher logo (required for Google Rich Results) --}}
+<script type="application/ld+json">{!! $_blogPostingSchema !!}</script>
+
+{{-- BreadcrumbList Schema (enables breadcrumb rich snippets in Google SERP) --}}
+<script type="application/ld+json">{!! $_breadcrumbSchema !!}</script>
+
+{{-- FAQPage Schema (shows expandable FAQ answers directly in Google search results) --}}
+@if($_faqSchema)
+<script type="application/ld+json">{!! $_faqSchema !!}</script>
+@endif
 @endpush
+
 
 @section('content')
 {{-- Scroll Reading Progress Bar --}}
@@ -147,7 +228,12 @@
 
                     {{-- Featured Image --}}
                     @if($post->featured_image)
-                        <img src="{{ asset('storage/' . $post->featured_image) }}" alt="{{ $post->title }}" width="800" height="384"
+                        {{-- fetchpriority=high tells browser this is the LCP element (Core Web Vitals) --}}
+                        <img src="{{ asset('storage/' . $post->featured_image) }}"
+                             alt="{{ $post->title }}"
+                             width="800" height="384"
+                             fetchpriority="high"
+                             decoding="async"
                              class="w-full rounded-2xl mb-8 object-cover max-h-96">
                     @endif
 

@@ -98,6 +98,21 @@
                                  if (data.seo_description) document.getElementById('meta_description').value = data.seo_description;
                                  if (data.keywords) document.getElementById('meta_keywords').value = data.keywords;
                                  
+                                 if (data.featured_image_url) {
+                                     updateFeaturedImagePreview(data.featured_image_url, data.featured_image_path);
+                                 }
+
+                                 if (data.generated_media && data.generated_media.length > 0) {
+                                     window.uploadedImagesMap = window.uploadedImagesMap || {};
+                                     data.generated_media.forEach(media => {
+                                         window.uploadedImagesMap[media.id] = {
+                                             fileName: media.fileName,
+                                             fileType: media.fileType,
+                                             fileSize: media.fileSize
+                                         };
+                                     });
+                                 }
+
                                  if (data.content) {
                                      const contentEditor = window.tiptapInstances && window.tiptapInstances['content'];
                                      if (contentEditor) {
@@ -559,9 +574,15 @@
                     <h3 class="text-md font-bold text-gray-800 border-b border-gray-100 pb-3">Media</h3>
 
                     <div>
-                        <label for="featured_image" class="block text-sm font-semibold text-gray-700">Featured Image</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Featured Image</label>
+                        <div id="image-preview-container" class="mb-2"></div>
                         <input type="file" name="featured_image" id="featured_image"
                                class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        <div class="mt-2 flex gap-2">
+                            <button type="button" onclick="selectFeaturedImage()" class="py-1.5 px-3 border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold rounded-lg cursor-pointer">
+                                🖼️ Select from Gallery
+                            </button>
+                        </div>
                         @error('featured_image')
                             <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
                         @enderror
@@ -1082,33 +1103,58 @@
         };
     }
 
+    function updateFeaturedImagePreview(url, path) {
+        const previewContainer = document.getElementById('image-preview-container');
+        const html = `
+            <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm max-h-40 bg-gray-50 flex items-center justify-center">
+                <img src="${url}" class="w-full h-32 object-cover" />
+                <input type="hidden" name="generated_image_path" id="generated_image_path" value="${path}" />
+                <button type="button" onclick="clearFeaturedImageSelection()" class="absolute top-2 right-2 bg-red-650 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Selection">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            </div>`;
+        if (previewContainer) {
+            previewContainer.innerHTML = html;
+        } else {
+            const parent = document.getElementById('featured_image').parentElement;
+            const preview = document.createElement('div');
+            preview.id = 'image-preview-container';
+            preview.className = 'mb-2';
+            preview.innerHTML = html;
+            parent.insertBefore(preview, parent.firstChild);
+        }
+        const removeInput = document.getElementById('remove_featured_image');
+        if (removeInput) {
+            removeInput.value = '0';
+        }
+    }
+
+    function clearFeaturedImageSelection() {
+        const previewContainer = document.getElementById('image-preview-container');
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+        }
+        const fileInput = document.getElementById('featured_image');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        const removeInput = document.getElementById('remove_featured_image');
+        if (removeInput) {
+            removeInput.value = '1';
+        }
+    }
+    
+    window.clearMediaLibrarySelection = clearFeaturedImageSelection;
+
     function selectFeaturedImage() {
         if (window.openMediaPicker) {
             window.openMediaPicker(function(url, meta) {
                 if (window.registerAndLogImageDetails) {
                     window.registerAndLogImageDetails(meta.alt, meta.mime_type, meta.file_size);
                 }
-                const previewContainer = document.getElementById('image-preview-container');
-                const html = `
-                    <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm max-h-40 bg-gray-50 flex items-center justify-center">
-                        <img src="${url}" class="w-full h-32 object-cover" />
-                        <input type="hidden" name="generated_image_path" value="${meta.path}" />
-                        <button type="button" onclick="clearMediaLibrarySelection()" class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-colors cursor-pointer" title="Remove Selection">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                        </button>
-                    </div>`;
-                if (previewContainer) {
-                    previewContainer.innerHTML = html;
-                } else {
-                    const parent = document.getElementById('featured_image').parentElement;
-                    const preview = document.createElement('div');
-                    preview.id = 'image-preview-container';
-                    preview.className = 'mb-2';
-                    preview.innerHTML = html;
-                    parent.insertBefore(preview, parent.firstChild);
-                }
+                updateFeaturedImagePreview(url, meta.path);
             });
         }
     }

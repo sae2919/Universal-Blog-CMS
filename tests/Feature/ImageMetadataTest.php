@@ -187,4 +187,92 @@ class ImageMetadataTest extends TestCase
         $this->assertEquals('Updated Page Title', $page->title);
         $this->assertEquals($newMetadata, $page->image_metadata);
     }
+
+    public function test_manual_image_alignment_and_optimization()
+    {
+        $metadata = [
+            'img_left' => [
+                'fileName' => 'left.webp',
+                'fileType' => 'image/webp',
+                'fileSize' => 1234,
+                'filePath' => 'uploads/left.webp',
+                'width' => 600,
+                'height' => 400,
+            ],
+            'img_right' => [
+                'fileName' => 'right.webp',
+                'fileType' => 'image/webp',
+                'fileSize' => 5678,
+                'filePath' => 'uploads/right.webp',
+                'width' => 800,
+                'height' => 600,
+            ],
+            'img_center' => [
+                'fileName' => 'center.webp',
+                'fileType' => 'image/webp',
+                'fileSize' => 9999,
+                'filePath' => 'uploads/center.webp',
+                'width' => 1000,
+                'height' => 800,
+            ],
+        ];
+
+        $htmlContent = '
+            <div class="tiptap-image-wrapper" style="float: left; width: 300px;">
+                <img data-image-id="img_left" src="http://localhost:8001/storage/uploads/left.webp" style="width: 300px;" />
+            </div>
+            <div class="tiptap-image-wrapper" style="float: right; width: 400px;">
+                <img data-image-id="img_right" src="http://localhost:8001/storage/uploads/right.webp" style="width: 400px;" />
+            </div>
+            <div class="tiptap-image-wrapper" style="float: none; margin-left: auto; margin-right: auto; width: 500px;">
+                <img data-image-id="img_center" src="http://localhost:8001/storage/uploads/center.webp" style="width: 500px;" />
+            </div>
+        ';
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('admin.posts.store'), [
+                'title' => 'Manual Alignment Post',
+                'category_id' => $this->category->id,
+                'locale' => 'en',
+                'excerpt' => 'Manual excerpt',
+                'content' => $htmlContent,
+                'status' => 'published',
+                'image_metadata' => json_encode($metadata),
+            ]);
+
+        $response->assertRedirect(route('admin.posts.index'));
+
+        // 1. Assert content stored in DB has stripped "src"
+        $rawPostContent = \DB::table('posts')->where('title', 'Manual Alignment Post')->value('content');
+        $post = Post::where('title', 'Manual Alignment Post')->firstOrFail();
+        $this->assertStringNotContainsString('src=', $rawPostContent);
+        $this->assertStringContainsString('data-image-id="img_left"', $rawPostContent);
+        $this->assertStringContainsString('data-image-id="img_right"', $rawPostContent);
+        $this->assertStringContainsString('data-image-id="img_center"', $rawPostContent);
+
+        // 2. Assert getContentAttribute restores "src" for editing
+        $restoredContent = $post->content;
+        $this->assertStringContainsString('src="' . asset('storage/uploads/left.webp') . '"', $restoredContent);
+        $this->assertStringContainsString('src="' . asset('storage/uploads/right.webp') . '"', $restoredContent);
+        $this->assertStringContainsString('src="' . asset('storage/uploads/center.webp') . '"', $restoredContent);
+
+        // 3. Assert getOptimizedContentAttribute outputs optimized styles and attributes
+        $optimizedHtml = $post->optimized_content;
+        
+        // Assert left align structure
+        $this->assertStringContainsString('style="float: left; width: 300px;"', $optimizedHtml);
+        $this->assertStringContainsString('width="600"', $optimizedHtml);
+        $this->assertStringContainsString('height="400"', $optimizedHtml);
+        
+        // Assert right align structure
+        $this->assertStringContainsString('style="float: right; width: 400px;"', $optimizedHtml);
+        $this->assertStringContainsString('width="800"', $optimizedHtml);
+        $this->assertStringContainsString('height="600"', $optimizedHtml);
+
+        // Assert lazy loading on images
+        $this->assertEquals(3, substr_count($optimizedHtml, 'loading="lazy"'));
+        $this->assertStringContainsString('aspect-ratio: 600 / 400', $optimizedHtml);
+        $this->assertStringContainsString('aspect-ratio: 800 / 600', $optimizedHtml);
+        $this->assertStringContainsString('aspect-ratio: 1000 / 800', $optimizedHtml);
+    }
 }
