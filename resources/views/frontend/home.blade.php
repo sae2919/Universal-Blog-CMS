@@ -6,8 +6,8 @@
 @section('content')
 
 {{-- Full-Width Rikkeisoft-style Hero Section --}}
-<section class="relative w-full h-[320px] sm:h-[380px] lg:h-[420px] bg-cover bg-center flex items-center justify-center text-center px-4" 
-         style="background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('{{ \App\Models\Setting::getValue('blog_hero_image') ? asset('storage/' . \App\Models\Setting::getValue('blog_hero_image')) : 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop' }}');">
+<section class="relative w-full bg-cover bg-center flex items-center justify-center text-center px-4" 
+         style="min-height: 450px; background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('{{ \App\Models\Setting::getValue('blog_hero_image') ? asset('storage/' . \App\Models\Setting::getValue('blog_hero_image')) : 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop' }}');">
     <div class="max-w-4xl mx-auto space-y-4">
         {{-- Title --}}
         <h1 class="text-white text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">

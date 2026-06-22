@@ -12,6 +12,11 @@
             {{ $page->title }}
         </h1>
         <div class="w-16 h-1.5 mx-auto rounded-full bg-indigo-600 dark:bg-indigo-400"></div>
+        @if($page->meta_description)
+            <p class="max-w-2xl mx-auto text-gray-550 dark:text-slate-400 text-lg font-medium">
+                {{ $page->meta_description }}
+            </p>
+        @endif
     </div>
 </div>
 

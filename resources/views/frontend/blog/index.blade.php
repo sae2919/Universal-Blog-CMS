@@ -56,6 +56,14 @@
                                         Blog
                                     </div>
                                 @endif
+
+                                {{-- Category Badge --}}
+                                @if($post->category)
+                                    <span class="absolute top-4 left-4 inline-block text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white shadow-sm z-10"
+                                          style="background-color: {{ $post->category->accent_color ?? '#dc2626' }};">
+                                        {{ $post->category->name }}
+                                    </span>
+                                @endif
                             </a>
 
                             {{-- Card Body --}}

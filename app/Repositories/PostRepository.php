@@ -13,7 +13,7 @@ class PostRepository
         return Post::select(['id', 'user_id', 'category_id', 'title', 'slug', 'excerpt', 'published_at', 'featured_image', 'is_featured', 'is_trending'])
             ->with([
                 'author:id,name,avatar',
-                'category:id,name,slug',
+                'category:id,name,slug,accent_color',
                 'tags:id,name,slug'
             ])
             ->published()
