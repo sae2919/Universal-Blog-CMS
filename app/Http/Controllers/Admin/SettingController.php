@@ -36,15 +36,17 @@ class SettingController extends Controller
             'site_accent_color'       => 'required|string',
             'site_font'               => 'required|string',
             'site_layout'             => 'required|in:grid,list,magazine',
-            'site_logo'               => 'nullable|image|max:2048',
-            'site_favicon'            => 'nullable|image|max:512',
-            'default_og_image'        => 'nullable|image|max:2048',
+            'site_logo'               => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'site_favicon'            => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp,ico|max:512',
+            'default_og_image'        => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'global_cta_title'        => 'nullable|string|max:255',
             'global_cta_description'  => 'nullable|string|max:1000',
             'global_cta_button_text'  => 'nullable|string|max:255',
             'global_cta_button_link'  => 'nullable|string|max:255',
-            'global_cta_bg_image'     => 'nullable|image|max:2048',
+            'global_cta_bg_image'     => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'ai_system_instruction'   => 'nullable|string|max:5000',
+            'blog_description'        => 'nullable|string|max:1000',
+            'blog_hero_image'         => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         if ($request->hasFile('site_logo')) {
@@ -58,6 +60,9 @@ class SettingController extends Controller
         }
         if ($request->hasFile('global_cta_bg_image')) {
             $validated['global_cta_bg_image'] = $request->file('global_cta_bg_image')->store('settings', 'public');
+        }
+        if ($request->hasFile('blog_hero_image')) {
+            $validated['blog_hero_image'] = $request->file('blog_hero_image')->store('settings', 'public');
         }
 
         Setting::updateOrCreate(['id' => 1], $validated);

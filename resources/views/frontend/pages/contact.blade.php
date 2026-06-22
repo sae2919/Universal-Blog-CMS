@@ -14,7 +14,7 @@
         </h1>
         <div class="w-20 h-1.5 mx-auto rounded-full" style="background: linear-gradient(to right, #38bdf8, #6366f1);"></div>
         <p class="max-w-2xl mx-auto text-indigo-200 text-lg font-medium">
-            {{ __('Have questions or need assistance? We are here to support you 24/7 on your learning journey.') }}
+            {{ $page->meta_description ?: __('Have questions or need assistance? We are here to support you 24/7 on your learning journey.') }}
         </p>
     </div>
 </div>

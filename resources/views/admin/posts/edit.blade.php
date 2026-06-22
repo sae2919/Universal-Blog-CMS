@@ -93,7 +93,10 @@
                          .then(data => {
                              this.loading = false;
                              if(data.success) {
-                                 if (data.title) document.getElementById('title').value = data.title;
+                                 if (data.title) {
+                                     document.getElementById('title').value = data.title;
+                                     document.getElementById('title').dispatchEvent(new Event('input'));
+                                 }
                                  if (data.excerpt) document.getElementById('excerpt').value = data.excerpt;
                                  if (data.meta_title) document.getElementById('meta_title').value = data.meta_title;
                                  if (data.seo_description) document.getElementById('meta_description').value = data.seo_description;
@@ -284,6 +287,15 @@
                     <input type="text" name="title" id="title" value="{{ old('title', $post->title) }}" placeholder="e.g. 10 Best Practices for Laravel Developers"
                            class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('title') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
                     @error('title')
+                        <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="slug" class="block text-sm font-semibold text-gray-700">Slug</label>
+                    <input type="text" name="slug" id="slug" value="{{ old('slug', $post->slug) }}" placeholder="e.g. 10-best-practices-for-laravel-developers"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('slug') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                    @error('slug')
                         <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
                     @enderror
                 </div>
@@ -483,19 +495,7 @@
                                class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-                        <div>
-                            <label for="og_title" class="block text-sm font-semibold text-gray-700">OG (Facebook/Twitter) Title</label>
-                            <input type="text" name="og_title" id="og_title" value="{{ old('og_title', $post->og_title) }}" placeholder="OG Title"
-                                   class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
 
-                        <div>
-                            <label for="og_description" class="block text-sm font-semibold text-gray-700">OG Description</label>
-                            <input type="text" name="og_description" id="og_description" value="{{ old('og_description', $post->og_description) }}" placeholder="OG Description"
-                                   class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -776,6 +776,35 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Slug Auto-Generation Logic ---
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+        let userEditedSlug = slugInput && slugInput.value !== '';
+
+        if (titleInput && slugInput) {
+            titleInput.addEventListener('input', function() {
+                if (!userEditedSlug) {
+                    slugInput.value = generateSlug(this.value);
+                }
+            });
+
+            slugInput.addEventListener('input', function() {
+                userEditedSlug = true;
+                if (this.value === '') {
+                    userEditedSlug = false;
+                }
+            });
+        }
+
+        function generateSlug(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')           // Replace spaces with -
+                .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+                .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+                .replace(/^-+/, '')             // Trim - from start of text
+                .replace(/-+$/, '');            // Trim - from end of text
+        }
+
         // Initialize main body editor
         initEditor('#content', 500);
 
@@ -937,6 +966,7 @@
         function saveDraft() {
             const draft = {
                 title: document.getElementById('title')?.value || '',
+                slug: document.getElementById('slug')?.value || '',
                 excerpt: document.getElementById('excerpt')?.value || '',
                 content: window.tiptapInstances['content']?.getHTML() || '',
                 faqs: []
@@ -960,6 +990,7 @@
 
         // Add listeners to standard fields
         document.getElementById('title')?.addEventListener('input', queueDraftSave);
+        document.getElementById('slug')?.addEventListener('input', queueDraftSave);
         document.getElementById('excerpt')?.addEventListener('input', queueDraftSave);
 
         // Listen for editor updates
@@ -983,6 +1014,10 @@
 
                     document.getElementById('restore-draft-btn')?.addEventListener('click', function() {
                         if (draft.title) document.getElementById('title').value = draft.title;
+                        if (draft.slug) {
+                            document.getElementById('slug').value = draft.slug;
+                            userEditedSlug = true;
+                        }
                         if (draft.excerpt) document.getElementById('excerpt').value = draft.excerpt;
                         if (draft.content) {
                             const editor = window.tiptapInstances['content'];

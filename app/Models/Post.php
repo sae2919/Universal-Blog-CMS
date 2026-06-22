@@ -56,7 +56,13 @@ class Post extends Model
     public function sluggable(): array
     {
         return [
-            'slug' => ['source' => 'title'],
+            'slug' => [
+                'source'       => 'title',
+                'unique'       => true,          // append -2, -3 etc if slug already exists
+                'uniqueSuffix' => null,          // use default numeric suffix separator
+                'onUpdate'     => false,         // do not change slug on title update
+                'separator'    => '-',
+            ],
         ];
     }
 

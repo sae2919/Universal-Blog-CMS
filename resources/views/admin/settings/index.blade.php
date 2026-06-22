@@ -34,6 +34,13 @@
                 </div>
             </div>
 
+            <div>
+                <label for="blog_description" class="block text-sm font-semibold text-gray-700">Homepage Hero Description</label>
+                <textarea name="blog_description" id="blog_description" rows="3" placeholder="Welcome message or description shown in the homepage hero header..."
+                          class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('blog_description') border-red-300 focus:ring-red-500 @enderror">{{ old('blog_description', $settings->blog_description) }}</textarea>
+                @error('blog_description') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="contact_email" class="block text-sm font-semibold text-gray-700">Contact Email</label>
@@ -65,7 +72,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
                 <div>
                     <label for="site_logo" class="block text-sm font-semibold text-gray-700">Site Logo</label>
                     @if($settings->site_logo)
@@ -74,6 +81,7 @@
                         </div>
                     @endif
                     <input type="file" name="site_logo" id="site_logo" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('site_logo') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -84,6 +92,7 @@
                         </div>
                     @endif
                     <input type="file" name="site_favicon" id="site_favicon" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('site_favicon') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -94,6 +103,18 @@
                         </div>
                     @endif
                     <input type="file" name="default_og_image" id="default_og_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('default_og_image') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="blog_hero_image" class="block text-sm font-semibold text-gray-700">Homepage Hero Image</label>
+                    @if($settings->blog_hero_image)
+                        <div class="mt-2">
+                            <img src="{{ asset('storage/' . $settings->blog_hero_image) }}" class="h-10 object-cover rounded border border-gray-200 p-1 bg-gray-50" alt="">
+                        </div>
+                    @endif
+                    <input type="file" name="blog_hero_image" id="blog_hero_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('blog_hero_image') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
                 </div>
             </div>
         </div>
@@ -248,6 +269,7 @@
                         </div>
                     @endif
                     <input type="file" name="global_cta_bg_image" id="global_cta_bg_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('global_cta_bg_image') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
                 </div>
             </div>
 

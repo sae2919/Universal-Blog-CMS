@@ -45,6 +45,15 @@
                 </div>
 
                 <div>
+                    <label for="slug" class="block text-sm font-semibold text-gray-700">Slug</label>
+                    <input type="text" name="slug" id="slug" value="{{ old('slug', $page->slug) }}" placeholder="e.g. about-us"
+                           class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('slug') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                    @error('slug')
+                        <p class="mt-1.5 text-xs text-red-650">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="content" class="block text-sm font-semibold text-gray-700">Page Content</label>
                     <textarea name="content" id="content" rows="15" placeholder="Write page content in HTML or plain text..."
                               class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm @error('content') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">{{ old('content', $page->content) }}</textarea>
@@ -262,6 +271,35 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Slug Auto-Generation Logic ---
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+        let userEditedSlug = slugInput && slugInput.value !== '';
+
+        if (titleInput && slugInput) {
+            titleInput.addEventListener('input', function() {
+                if (!userEditedSlug) {
+                    slugInput.value = generateSlug(this.value);
+                }
+            });
+
+            slugInput.addEventListener('input', function() {
+                userEditedSlug = true;
+                if (this.value === '') {
+                    userEditedSlug = false;
+                }
+            });
+        }
+
+        function generateSlug(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')           // Replace spaces with -
+                .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+                .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+                .replace(/^-+/, '')             // Trim - from start of text
+                .replace(/-+$/, '');            // Trim - from end of text
+        }
+
         // Initialize main body editor
         initEditor('#content', 500);
 

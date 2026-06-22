@@ -55,4 +55,28 @@ class SettingTest extends TestCase
         // Check cache retrieval
         $this->assertEquals($customInstruction, Setting::getValue('ai_system_instruction'));
     }
+
+    public function test_admin_can_upload_svg_site_logo()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $file = \Illuminate\Http\UploadedFile::fake()->create('logo.svg', 50, 'image/svg+xml');
+
+        $response = $this->actingAs($this->admin)
+            ->put(route('admin.settings.update'), [
+                'site_name' => 'Updated Blog Name',
+                'site_niche' => 'technology',
+                'site_accent_color' => 'indigo',
+                'site_font' => 'font-sans',
+                'site_layout' => 'grid',
+                'site_logo' => $file,
+            ]);
+
+        $response->assertRedirect(route('admin.settings.index'));
+        $response->assertSessionHas('success', 'Settings saved!');
+
+        $setting = Setting::first();
+        $this->assertNotNull($setting->site_logo);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($setting->site_logo);
+    }
 }

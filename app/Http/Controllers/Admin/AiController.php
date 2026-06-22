@@ -15,6 +15,9 @@ use Intervention\Image\Drivers\Gd\Driver;
 class AiController extends Controller
 {
     private array $usedUrls = [];
+    private array $usedLocalFallbacks = [];
+    private array $usedPhotoIds = []; // Track Unsplash/Pexels photo IDs used this request
+    private bool $unsplashAvailable = true; // Circuit-breaker: flipped false after first timeout
 
     /**
      * Display the AI Assistant standalone dashboard.
@@ -185,24 +188,18 @@ class AiController extends Controller
 
         $generatedMedia = [];
 
-        // 1. Generate Featured Image (Thumbnail) automatically using the title
-        $featuredUrl = $this->getUnsplashUrlForPrompt($outputTitle);
-        $featuredData = $this->saveImageFromUrl($featuredUrl);
-        if (!$featuredData) {
-            $featuredData = $this->getFallbackImagePayload($featuredUrl);
-        } else {
-            // Register featured image metadata
-            $fileSize = 0;
-            try {
-                $fileSize = Storage::disk('public')->size($featuredData['path']) ?? 0;
-            } catch (\Exception $e) {}
-            $generatedMedia[] = [
-                'id' => 'img_' . round(microtime(true) * 1000) . '_0',
-                'fileName' => $featuredData['fileName'],
-                'fileType' => 'image/webp',
-                'fileSize' => $fileSize
-            ];
-        }
+        // 1. Generate Featured Image (Thumbnail) using keyword-matched stock photo
+        $featuredData = $this->generateImageFromAI($outputTitle) ?? $this->getFallbackImagePayload(null);
+        $fileSize = 0;
+        try {
+            $fileSize = Storage::disk('public')->size($featuredData['path']) ?? 0;
+        } catch (\Exception $e) {}
+        $generatedMedia[] = [
+            'id'       => 'img_' . round(microtime(true) * 1000) . '_0',
+            'fileName' => $featuredData['fileName'],
+            'fileType' => 'image/webp',
+            'fileSize' => $fileSize
+        ];
 
         // 2. Process inline images and sliders embedded inside outputContent
         $outputContent = $this->processGeneratedHtml($outputContent, $generatedMedia);
@@ -430,89 +427,417 @@ class AiController extends Controller
         $aiResult = $this->callGemini($aiPrompt, true);
         $keyword = $aiResult['keyword'] ?? $prompt;
 
-        $url = $this->getUnsplashUrlForPrompt($keyword);
-        $imgData = $this->saveImageFromUrl($url);
+        $imgData = $this->generateImageFromAI($keyword) ?? $this->getFallbackImagePayload(null);
 
-        if ($imgData) {
-            return response()->json([
-                'success' => true,
-                'url' => $imgData['url'],
-                'path' => $imgData['path'],
-                'fileName' => $imgData['fileName'],
-                'media_id' => $imgData['media_id'],
-            ]);
-        }
-
-        // Fallback in case request times out or is offline
-        $fallback = $this->getFallbackImagePayload($url);
-        return response()->json($fallback);
+        return response()->json([
+            'success'  => true,
+            'url'      => $imgData['url'],
+            'path'     => $imgData['path'],
+            'fileName' => $imgData['fileName'],
+            'media_id' => $imgData['media_id'] ?? null,
+        ]);
     }
 
     /**
-     * Helper to download an image from Unsplash, convert it to WebP (quality 90),
+     * Helper to download an image from an external URL, convert it to WebP (quality 90),
      * save it to disk, and register it in the Media library.
+     *
+     * If AI_IMAGE_USE_LOCAL=true in .env (or external fetch is disabled), skips all
+     * network requests and goes straight to copyLocalFallbackImage().
      */
     private function saveImageFromUrl(string $url)
     {
+        // If local-only mode is enabled, skip all external HTTP attempts immediately
+        if (env('AI_IMAGE_USE_LOCAL', false)) {
+            return $this->copyLocalFallbackImage();
+        }
+
+        // Try to download from external URL — short 3s timeout to fail fast
         try {
-            $response = Http::timeout(15)->get($url);
-            if ($response->successful()) {
+            $response = Http::timeout(3)->get($url);
+            if ($response->successful() && strlen($response->body()) > 1000) {
                 $contents = $response->body();
-                
-                // Process image using Intervention Image manager
+
+                // Convert to WebP using Intervention Image
                 $manager = new ImageManager(new Driver());
                 $image = $manager->read($contents)->toWebp(90);
-                
+
                 $fileName = 'ai_generated_' . time() . '_' . uniqid() . '.webp';
                 $filePath = 'uploads/' . $fileName;
-                
+
                 Storage::disk('public')->makeDirectory('uploads');
                 Storage::disk('public')->put($filePath, $image);
 
                 $media = Media::create([
-                    'file_name' => $fileName,
-                    'file_path' => $filePath,
-                    'mime_type' => 'image/webp',
-                    'file_size' => strlen($image),
+                    'file_name'   => $fileName,
+                    'file_path'   => $filePath,
+                    'mime_type'   => 'image/webp',
+                    'file_size'   => strlen($image),
                     'uploaded_by' => auth()->id() ?? 1,
                 ]);
 
                 return [
-                    'success' => true,
-                    'url' => asset('storage/' . $filePath),
-                    'path' => $filePath,
+                    'success'  => true,
+                    'url'      => asset('storage/' . $filePath),
+                    'path'     => $filePath,
                     'fileName' => $fileName,
                     'media_id' => $media->id,
                 ];
+            } else {
+                Log::warning('AI image: external URL returned non-success or empty body, falling back to local. URL: ' . $url);
             }
         } catch (\Exception $e) {
-            Log::error('Failed to process AI image: ' . $e->getMessage());
+            Log::warning('AI image: external fetch failed (' . $e->getMessage() . '), falling back to local.');
+        }
+
+        // Always fall through to a guaranteed unique local copy
+        return $this->copyLocalFallbackImage();
+    }
+
+    /**
+     * Copy a unique, unused local image from posts/ into uploads/ and register it in Media.
+     * This is the guaranteed offline-safe fallback.
+     */
+    private function copyLocalFallbackImage(): ?array
+    {
+        try {
+            $files = Storage::disk('public')->files('posts');
+            $imageFiles = array_values(array_filter($files, function($file) {
+                return preg_match('/\.(jpg|jpeg|png|webp|gif)$/i', $file);
+            }));
+
+            if (empty($imageFiles)) {
+                Log::error('No images found in posts/ folder for local fallback.');
+                return null;
+            }
+
+            // Prioritize unused local fallbacks to guarantee uniqueness within this request
+            $unusedFiles = array_values(array_diff($imageFiles, $this->usedLocalFallbacks));
+            if (empty($unusedFiles)) {
+                // All used — reset and pick freely (wrap-around)
+                $this->usedLocalFallbacks = [];
+                $unusedFiles = $imageFiles;
+            }
+
+            // Shuffle for randomness then pick first
+            shuffle($unusedFiles);
+            $randomFile = $unusedFiles[0];
+            $extension   = pathinfo($randomFile, PATHINFO_EXTENSION);
+
+            // Always generate a unique filename so images never repeat visually
+            $fileName = 'ai_fallback_' . time() . '_' . uniqid() . '.' . $extension;
+            $filePath = 'uploads/' . $fileName;
+
+            Storage::disk('public')->makeDirectory('uploads');
+            Storage::disk('public')->copy($randomFile, $filePath);
+
+            // Mark source file as used so the next call picks a different one
+            $this->usedLocalFallbacks[] = $randomFile;
+
+            $fileSize = Storage::disk('public')->size($filePath);
+            $mimeType = 'image/' . ($extension === 'jpg' ? 'jpeg' : strtolower($extension));
+
+            $media = Media::create([
+                'file_name'   => $fileName,
+                'file_path'   => $filePath,
+                'mime_type'   => $mimeType,
+                'file_size'   => $fileSize,
+                'uploaded_by' => auth()->id() ?? 1,
+            ]);
+
+            return [
+                'success'  => true,
+                'url'      => asset('storage/' . $filePath),
+                'path'     => $filePath,
+                'fileName' => $fileName,
+                'media_id' => $media->id,
+                'offline'  => true,
+            ];
+        } catch (\Exception $e) {
+            Log::error('copyLocalFallbackImage failed: ' . $e->getMessage());
         }
 
         return null;
     }
 
     /**
-     * Return fallback image structure.
+     * Return a fallback image payload. Always uses copyLocalFallbackImage so the
+     * URL is a proper local asset — never a broken external link.
      */
-    private function getFallbackImagePayload(?string $url = null)
+    private function getFallbackImagePayload(?string $url = null): array
     {
-        $resolvedUrl = $url ?? 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200';
-        $pathInfo = parse_url($resolvedUrl, PHP_URL_PATH);
-        $baseName = basename($pathInfo);
-        $fileName = (str_contains($baseName, '.') ? $baseName : $baseName . '.jpg');
+        $local = $this->copyLocalFallbackImage();
+        if ($local) {
+            return $local;
+        }
+
+        // Absolute last resort — static placeholder
+        $staticPath = 'posts/placeholder.jpg';
+        if (!Storage::disk('public')->exists($staticPath)) {
+            if (file_exists(public_path('images/future_learning.png'))) {
+                Storage::disk('public')->makeDirectory('posts');
+                Storage::disk('public')->put($staticPath, file_get_contents(public_path('images/future_learning.png')));
+            }
+        }
         return [
-            'success' => true,
-            'url' => $resolvedUrl,
-            'path' => 'posts/' . $fileName,
-            'fileName' => $fileName,
+            'success'  => true,
+            'url'      => asset('storage/' . $staticPath),
+            'path'     => $staticPath,
+            'fileName' => 'placeholder.jpg',
             'media_id' => null,
-            'offline' => true,
+            'offline'  => true,
         ];
     }
 
+    // =========================================================================
+    // IMAGE PROVIDER METHODS
+    // =========================================================================
+
     /**
-     * Map prompts and keywords to high-quality Unsplash image URLs.
+     * Central dispatcher: routes to the right image provider based on AI_IMAGE_PROVIDER env var.
+     *  - pexels  → Pexels only (fastest, most reliable on this network)
+     *  - unsplash → Unsplash first (4s timeout + circuit-breaker), then Pexels fallback
+     *  - local   → local posts/ folder only
+     */
+    private function generateImageFromAI(string $prompt): ?array
+    {
+        $provider = strtolower(env('AI_IMAGE_PROVIDER', 'pexels'));
+
+        // Force local if configured or overridden
+        if ($provider === 'local' || env('AI_IMAGE_USE_LOCAL', false)) {
+            return $this->copyLocalFallbackImage();
+        }
+
+        // Extract clean search keywords from the descriptive prompt
+        $keywords = $this->extractKeywords($prompt);
+        if (empty($keywords)) $keywords = 'technology';
+
+        // When provider=pexels: Pexels first, no Unsplash (avoids all timeout costs)
+        if ($provider === 'pexels') {
+            $result = $this->generateFromPexels($keywords);
+            if ($result) return $result;
+        }
+
+        // When provider=unsplash: Unsplash first (with 4s timeout + circuit-breaker), then Pexels
+        if ($provider === 'unsplash') {
+            $result = $this->generateFromUnsplash($keywords);
+            if ($result) return $result;
+
+            $result = $this->generateFromPexels($keywords);
+            if ($result) return $result;
+        }
+
+        // Final fallback: local posts/ images
+        Log::warning('AI image: all providers failed for prompt "' . $prompt . '", using local fallback.');
+        return $this->copyLocalFallbackImage();
+    }
+
+
+    /**
+     * Fetch a unique, keyword-matched photo from the Unsplash API.
+     * Circuit-breaker: if Unsplash times out once, it is skipped for the rest of the request.
+     */
+    private function generateFromUnsplash(string $keywords): ?array
+    {
+        // Circuit-breaker: skip entirely if Unsplash failed earlier in this request
+        if (!$this->unsplashAvailable) {
+            return null;
+        }
+
+        $accessKey = env('UNSPLASH_ACCESS_KEY');
+        if (empty($accessKey)) {
+            Log::warning('AI image: UNSPLASH_ACCESS_KEY not configured.');
+            return null;
+        }
+
+        try {
+            // Short 4-second timeout — fail fast so Pexels can take over immediately
+            $response = Http::timeout(4)
+                ->withHeaders(['Authorization' => 'Client-ID ' . $accessKey])
+                ->get('https://api.unsplash.com/photos/random', [
+                    'query'       => $keywords,
+                    'orientation' => 'landscape',
+                    'count'       => 5,
+                ]);
+
+            if ($response->successful()) {
+                $photos = $response->json();
+                // API returns object for count=1, array for count>1
+                if (!is_array($photos) || isset($photos['id'])) {
+                    $photos = [$photos];
+                }
+
+                foreach ($photos as $photo) {
+                    $photoId  = $photo['id'] ?? null;
+                    if ($photoId && in_array($photoId, $this->usedPhotoIds)) continue;
+
+                    // Prefer 'regular' (1080px) for speed; fall back to 'full'
+                    $imageUrl = $photo['urls']['regular'] ?? $photo['urls']['full'] ?? null;
+                    if (!$imageUrl) continue;
+
+                    $result = $this->downloadAndSaveImage($imageUrl, 'unsplash');
+                    if ($result) {
+                        if ($photoId) $this->usedPhotoIds[] = $photoId;
+                        Log::info('AI image: Unsplash photo "' . $photoId . '" saved for keywords: ' . $keywords);
+                        return $result;
+                    }
+                }
+
+                Log::warning('AI image: Unsplash returned photos but none could be downloaded for keywords: ' . $keywords);
+            } else {
+                Log::warning('AI image: Unsplash API error ' . $response->status() . ' for keywords: ' . $keywords);
+            }
+        } catch (\Exception $e) {
+            // On any connection or timeout error, disable Unsplash for the rest of this request
+            $this->unsplashAvailable = false;
+            Log::warning('AI image: Unsplash unavailable (circuit open) — ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Fetch a unique, keyword-matched photo from the Pexels API.
+     */
+    private function generateFromPexels(string $keywords): ?array
+    {
+        $apiKey = env('PEXELS_API_KEY');
+        if (empty($apiKey)) {
+            Log::warning('AI image: PEXELS_API_KEY not configured.');
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders(['Authorization' => $apiKey])
+                ->get('https://api.pexels.com/v1/search', [
+                    'query'       => $keywords,
+                    'per_page'    => 15,
+                    'page'        => rand(1, 3),
+                    'orientation' => 'landscape',
+                ]);
+
+            if ($response->successful()) {
+                $photos = $response->json('photos') ?? [];
+
+                // If random page was empty, retry page 1
+                if (empty($photos)) {
+                    $retry = Http::timeout(15)
+                        ->withHeaders(['Authorization' => $apiKey])
+                        ->get('https://api.pexels.com/v1/search', [
+                            'query'       => $keywords,
+                            'per_page'    => 15,
+                            'page'        => 1,
+                            'orientation' => 'landscape',
+                        ]);
+                    if ($retry->successful()) {
+                        $photos = $retry->json('photos') ?? [];
+                    }
+                }
+
+                // Shuffle to randomise which photo is picked
+                shuffle($photos);
+                foreach ($photos as $photo) {
+                    $photoId = (string)($photo['id'] ?? '');
+                    if ($photoId && in_array($photoId, $this->usedPhotoIds)) continue;
+
+                    $imageUrl = $photo['src']['large2x'] ?? $photo['src']['large'] ?? null;
+                    if (!$imageUrl) continue;
+
+                    $result = $this->downloadAndSaveImage($imageUrl, 'pexels');
+                    if ($result) {
+                        if ($photoId) $this->usedPhotoIds[] = $photoId;
+                        Log::info('AI image: Pexels photo "' . $photoId . '" saved for keywords: ' . $keywords);
+                        return $result;
+                    }
+                }
+
+                Log::warning('AI image: Pexels returned photos but none could be downloaded for keywords: ' . $keywords);
+            } else {
+                Log::warning('AI image: Pexels API error ' . $response->status() . ' for keywords: ' . $keywords);
+            }
+        } catch (\Exception $e) {
+            Log::error('AI image: Pexels request exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Download an image from any URL, convert to WebP 90, save to uploads/, register in Media.
+     */
+    private function downloadAndSaveImage(string $url, string $prefix = 'ai'): ?array
+    {
+        try {
+            $response = Http::timeout(20)->get($url);
+            if ($response->successful() && strlen($response->body()) > 1000) {
+                $contents = $response->body();
+
+                $manager  = new ImageManager(new Driver());
+                $image    = $manager->read($contents)->toWebp(90);
+
+                $fileName = 'ai_' . $prefix . '_' . time() . '_' . uniqid() . '.webp';
+                $filePath = 'uploads/' . $fileName;
+
+                Storage::disk('public')->makeDirectory('uploads');
+                Storage::disk('public')->put($filePath, $image);
+
+                $media = Media::create([
+                    'file_name'   => $fileName,
+                    'file_path'   => $filePath,
+                    'mime_type'   => 'image/webp',
+                    'file_size'   => strlen($image),
+                    'uploaded_by' => auth()->id() ?? 1,
+                ]);
+
+                return [
+                    'success'  => true,
+                    'url'      => asset('storage/' . $filePath),
+                    'path'     => $filePath,
+                    'fileName' => $fileName,
+                    'media_id' => $media->id,
+                ];
+            } else {
+                Log::warning('AI image: downloadAndSaveImage failed (status ' . $response->status() . ') for: ' . $url);
+            }
+        } catch (\Exception $e) {
+            Log::warning('AI image: downloadAndSaveImage exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract 1-3 comma-separated keywords from a descriptive prompt to search LoremFlickr.
+     */
+    private function extractKeywords(string $prompt): string
+    {
+        $prompt = strtolower($prompt);
+        $prompt = preg_replace('/[^\w\s,]/', '', $prompt);
+        
+        $stopWords = [
+            'a', 'an', 'the', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 
+            'with', 'by', 'of', 'about', 'detailed', 'descriptive', 'prompt', 'what', 'this', 'image', 
+            'should', 'show', 'eg', 'showing', 'photos', 'photo', 'images', 'image', 'set', 'stock', 
+            'views', 'view', 'related', 'variant', 'glow', 'sharp', 'focus'
+        ];
+        
+        $words = preg_split('/[\s,]+/', $prompt);
+        $keywords = [];
+        foreach ($words as $word) {
+            $word = trim($word);
+            if (!empty($word) && !in_array($word, $stopWords) && strlen($word) > 2) {
+                $keywords[] = $word;
+            }
+        }
+        
+        $keywords = array_slice(array_unique($keywords), 0, 3);
+        
+        return !empty($keywords) ? implode(',', $keywords) : 'coding';
+    }
+
+    /**
+     * Map prompts and keywords to high-quality stock photo URLs (using LoremFlickr, falling back to Unsplash pool).
      */
     private function getUnsplashUrlForPrompt(string $prompt): string
     {
@@ -581,6 +906,10 @@ class AiController extends Controller
             ]
         ];
 
+        // Clean & extract keywords for LoremFlickr search
+        $keywords = $this->extractKeywords($prompt);
+
+        // Classify category for the fallback Unsplash pool
         $promptLower = strtolower($prompt);
         $matchedCategory = 'code';
 
@@ -608,29 +937,70 @@ class AiController extends Controller
 
         $list = $urls[$matchedCategory];
 
-        // Filter out URLs already used in the current generation request to prevent repetition
-        $unusedList = array_values(array_diff($list, $this->usedUrls));
+        // Load globally used URLs from persistent JSON file and cache
+        $filePath = storage_path('app/ai_used_unsplash_urls.json');
+        $fileUsed = [];
+        if (file_exists($filePath)) {
+            try {
+                $fileUsed = json_decode(file_get_contents($filePath), true) ?: [];
+            } catch (\Exception $e) {
+                $fileUsed = [];
+            }
+        }
+
+        $globalUsed = \Illuminate\Support\Facades\Cache::get('ai_used_unsplash_urls', []);
+        $allUsed = array_unique(array_merge($globalUsed, $fileUsed, $this->usedUrls));
+
+        // 1. Try to get a unique Unsplash URL from the list
+        $unusedList = array_values(array_diff($list, $allUsed));
 
         if (empty($unusedList)) {
-            // Collect unused URLs from all other categories to prevent repetition
+            // Collect unused URLs from all other categories
             $allUrls = [];
             foreach ($urls as $cat => $catUrls) {
                 $allUrls = array_merge($allUrls, $catUrls);
             }
-            $unusedList = array_values(array_diff($allUrls, $this->usedUrls));
+            $unusedList = array_values(array_diff($allUrls, $allUsed));
         }
 
         if (empty($unusedList)) {
-            $unusedList = $list;
+            // Reset / wrap-around
+            \Illuminate\Support\Facades\Cache::forget('ai_used_unsplash_urls');
+            try {
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            } catch (\Exception $e) {}
+            
+            $fileUsed = [];
+            $allUsed = $this->usedUrls;
+            $unusedList = array_values(array_diff($list, $allUsed));
+            if (empty($unusedList)) {
+                $unusedList = $list;
+            }
         }
 
-        // Pick a random URL from the remaining unused options
-        $selectedUrl = $unusedList[array_rand($unusedList)];
+        // Pick a random base Unsplash URL from the pool
+        $selectedUnsplash = $unusedList[array_rand($unusedList)];
 
-        // Record it as used
-        $this->usedUrls[] = $selectedUrl;
+        // Record it as used in request
+        $this->usedUrls[] = $selectedUnsplash;
 
-        return $selectedUrl;
+        // Save back to global cache and local file
+        $fileUsed[] = $selectedUnsplash;
+        $uniqueUsed = array_values(array_unique(array_merge($globalUsed, $fileUsed)));
+        \Illuminate\Support\Facades\Cache::put('ai_used_unsplash_urls', $uniqueUsed, now()->addDays(30));
+        try {
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0755, true);
+            }
+            file_put_contents($filePath, json_encode($uniqueUsed));
+        } catch (\Exception $e) {
+            Log::error('Failed to write ai_used_unsplash_urls.json: ' . $e->getMessage());
+        }
+
+        // Return the selected Unsplash URL directly — skip LoremFlickr (unreliable in this network environment)
+        return $selectedUnsplash;
     }
 
     /**
@@ -655,11 +1025,7 @@ class AiController extends Controller
         foreach ($imgs as $img) {
             $aiPrompt = $img->getAttribute('data-ai-prompt');
             if ($aiPrompt) {
-                $url = $this->getUnsplashUrlForPrompt($aiPrompt);
-                $imgData = $this->saveImageFromUrl($url);
-                if (!$imgData) {
-                    $imgData = $this->getFallbackImagePayload($url);
-                }
+                $imgData = $this->generateImageFromAI($aiPrompt) ?? $this->getFallbackImagePayload(null);
 
                 $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
                 $fileSize = 0;
@@ -703,12 +1069,8 @@ class AiController extends Controller
             if ($aiPrompt) {
                 $sliderImagesHtml = '';
                 for ($i = 0; $i < $count; $i++) {
-                    $uniquePrompt = $aiPrompt . " variant " . ($i + 1);
-                    $url = $this->getUnsplashUrlForPrompt($uniquePrompt);
-                    $imgData = $this->saveImageFromUrl($url);
-                    if (!$imgData) {
-                        $imgData = $this->getFallbackImagePayload($url);
-                    }
+                    $uniquePrompt = $aiPrompt . ' — photo ' . ($i + 1) . ' of ' . $count;
+                    $imgData = $this->generateImageFromAI($uniquePrompt) ?? $this->getFallbackImagePayload(null);
 
                     $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
                     $fileSize = 0;

@@ -26,6 +26,7 @@ class PageController extends Controller
     {
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
+            'slug'             => 'nullable|string|max:255|unique:pages,slug',
             'locale'           => 'required|in:en,fr,de,hi,te',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',
@@ -94,6 +95,7 @@ class PageController extends Controller
     {
         $validated = $request->validate([
             'title'            => 'required|string|max:255',
+            'slug'             => 'nullable|string|max:255|unique:pages,slug,' . $page->id,
             'locale'           => 'required|in:en,fr,de,hi,te',
             'content'          => 'required|string',
             'featured_image'   => 'nullable|image|max:2048',

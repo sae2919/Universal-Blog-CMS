@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
                 'site_layout' => 'grid',
                 'default_meta_title' => 'Universal Blog CMS — High Performance Blog Site',
                 'default_meta_description' => 'A universal blog portal featuring dynamic settings, caching, full SEO support, and pure Tailwind styling.',
+                'blog_description' => 'Welcome to Universal Blog CMS\'s Blog, your go-to source for the latest updates, insights, and trends in the world of software development.',
                 'ai_system_instruction' => "You are an AI assistant for a blog CMS. The user has provided some fields for a blog article and wants you to generate the remaining ones. Please generate the missing fields. \n"
                                          . "CRITICAL: If the user did not provide any content (body text), you MUST write a complete, high-quality, professional, and detailed blog article body (at least 300-500 words) structured in valid HTML containing headings (h2, h3), paragraphs, lists or bold code terms where appropriate. Do not return empty content or placeholders.\n"
                                          . "If the Title is missing, suggest a catchy, SEO-optimized title based on the other fields. If the Excerpt is missing, write a 1-2 sentence excerpt summarizing the article.",

@@ -121,4 +121,29 @@ class AiTest extends TestCase
         
         $this->assertCount(count($fileNames), $uniqueFileNames, 'Image filenames were duplicated in the generated article.');
     }
+
+    public function test_generate_article_does_not_repeat_unsplash_images_across_different_requests()
+    {
+        \Illuminate\Support\Facades\Cache::forget('ai_used_unsplash_urls');
+
+        // First Request
+        $response1 = $this->actingAs($this->admin)
+            ->postJson(route('admin.ai.generate-article'), [
+                'title' => 'Laravel coding optimization',
+            ]);
+        $response1->assertStatus(200);
+        $url1 = $response1->json('featured_image_url');
+
+        // Second Request
+        $response2 = $this->actingAs($this->admin)
+            ->postJson(route('admin.ai.generate-article'), [
+                'title' => 'Laravel coding optimization',
+            ]);
+        $response2->assertStatus(200);
+        $url2 = $response2->json('featured_image_url');
+
+        $this->assertNotEmpty($url1);
+        $this->assertNotEmpty($url2);
+        $this->assertNotEquals($url1, $url2, 'The same Unsplash image URL was selected across different generation requests.');
+    }
 }
