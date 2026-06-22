@@ -32,7 +32,9 @@ class SearchService
             return collect();
         }
 
-        return \App\Models\Post::with('category')
+        return \App\Models\Post::query()
+            ->select(['id', 'title', 'category_id', 'slug'])
+            ->with(['category:id,name,icon_emoji,slug'])
             ->published()
             ->forCurrentLocale()
             ->where('title', 'like', "%{$query}%")
@@ -42,9 +44,9 @@ class SearchService
             ->map(function ($post) {
                 return [
                     'title'          => $post->title,
-                    'category_name'  => $post->category->name,
-                    'category_emoji' => $post->category->icon_emoji,
-                    'url'            => route('blog.show', [$post->category->slug, $post->slug]),
+                    'category_name'  => $post->category->name ?? 'Uncategorized',
+                    'category_emoji' => $post->category->icon_emoji ?? '📝',
+                    'url'            => route('blog.show', [$post->category->slug ?? 'uncategorized', $post->slug]),
                 ];
             });
     }

@@ -10,7 +10,12 @@ class PostRepository
 {
     public function getPublishedPaginated(int $perPage = 10): LengthAwarePaginator
     {
-        return Post::with('author', 'category', 'tags')
+        return Post::select(['id', 'user_id', 'category_id', 'title', 'slug', 'excerpt', 'published_at', 'featured_image', 'is_featured', 'is_trending'])
+            ->with([
+                'author:id,name,avatar',
+                'category:id,name,slug',
+                'tags:id,name,slug'
+            ])
             ->published()
             ->forCurrentLocale()
             ->latest('published_at')
@@ -19,7 +24,9 @@ class PostRepository
 
     public function getPopular(int $limit = 5): Collection
     {
-        return Post::published()
+        return Post::select(['id', 'category_id', 'title', 'slug', 'published_at', 'views'])
+            ->with(['category:id,name,slug'])
+            ->published()
             ->forCurrentLocale()
             ->orderByDesc('views')
             ->take($limit)
@@ -28,24 +35,15 @@ class PostRepository
 
     public function getRelated(Post $post, int $limit = 4): Collection
     {
-        $related = Post::published()
+        return Post::select(['id', 'category_id', 'title', 'slug', 'published_at', 'featured_image'])
+            ->with(['category:id,name,slug'])
+            ->published()
             ->forCurrentLocale()
-            ->where('category_id', $post->category_id)
             ->where('id', '!=', $post->id)
+            ->orderByRaw('case when category_id = ? then 0 else 1 end', [$post->category_id])
             ->latest('published_at')
             ->take($limit)
             ->get();
-
-        if ($related->isEmpty()) {
-            return Post::published()
-                ->forCurrentLocale()
-                ->where('id', '!=', $post->id)
-                ->latest('published_at')
-                ->take($limit)
-                ->get();
-        }
-
-        return $related;
     }
 
     public function findBySlug(string $categorySlug, string $postSlug): ?Post
@@ -61,7 +59,11 @@ class PostRepository
 
     public function getByCategoryPaginated(int $categoryId, int $perPage = 10): LengthAwarePaginator
     {
-        return Post::with('author', 'category')
+        return Post::select(['id', 'user_id', 'category_id', 'title', 'slug', 'excerpt', 'published_at', 'featured_image'])
+            ->with([
+                'author:id,name,avatar',
+                'category:id,name,slug'
+            ])
             ->published()
             ->forCurrentLocale()
             ->where('category_id', $categoryId)
@@ -81,7 +83,11 @@ class PostRepository
 
     public function searchPaginated(string $query, int $perPage = 10): LengthAwarePaginator
     {
-        return Post::with('author', 'category')
+        return Post::select(['id', 'user_id', 'category_id', 'title', 'slug', 'excerpt', 'published_at', 'featured_image'])
+            ->with([
+                'author:id,name,avatar',
+                'category:id,name,slug'
+            ])
             ->published()
             ->forCurrentLocale()
             ->where(function ($q) use ($query) {

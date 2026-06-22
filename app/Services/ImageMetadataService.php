@@ -40,6 +40,15 @@ class ImageMetadataService
             }
         }
         
+        $existingContentFiles = [];
+        if (!empty($contentFilenames)) {
+            foreach ($contentFilenames as $cName) {
+                if ($disk->exists('uploads/' . $cName)) {
+                    $existingContentFiles[$cName] = true;
+                }
+            }
+        }
+        
         foreach ($metadata as $id => &$info) {
             if (isset($idToSrcMap[$id])) {
                 $info['url'] = $idToSrcMap[$id];
@@ -53,13 +62,14 @@ class ImageMetadataService
             
             // 1. Try to match with a filename extracted from content HTML first (handles uploads with timestamps)
             foreach ($contentFilenames as $cName) {
+                if (!isset($existingContentFiles[$cName])) {
+                    continue;
+                }
                 $origBase = pathinfo($fileName, PATHINFO_FILENAME);
                 $slugBase = \Str::slug($origBase);
                 if (str_starts_with($cName, $slugBase) || str_contains($cName, $slugBase)) {
-                    if ($disk->exists('uploads/' . $cName)) {
-                        $foundPath = 'uploads/' . $cName;
-                        break;
-                    }
+                    $foundPath = 'uploads/' . $cName;
+                    break;
                 }
             }
             

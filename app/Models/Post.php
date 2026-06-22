@@ -11,14 +11,20 @@ class Post extends Model
 {
     use HasFactory, Sluggable, SoftDeletes;
 
+    protected ?string $restoredContent = null;
+    protected ?string $enhancedContent = null;
+
     protected static function booted()
     {
         static::saving(function ($model) {
-            $rawContent = $model->getAttributes()['content'] ?? '';
-            if ($model->image_metadata && is_array($model->image_metadata)) {
-                $model->image_metadata = app(\App\Services\ImageMetadataService::class)->optimizeMetadata($model->image_metadata, $rawContent, $model->featured_image);
+            // Only perform heavy image/metadata optimization if content, image_metadata, or featured_image is dirty
+            if ($model->isDirty('content') || $model->isDirty('image_metadata') || $model->isDirty('featured_image')) {
+                $rawContent = $model->getAttributes()['content'] ?? '';
+                if ($model->image_metadata && is_array($model->image_metadata)) {
+                    $model->image_metadata = app(\App\Services\ImageMetadataService::class)->optimizeMetadata($model->image_metadata, $rawContent, $model->featured_image);
+                }
+                $model->attributes['content'] = app(\App\Services\ImageMetadataService::class)->stripSrc($rawContent, $model->image_metadata ?? []);
             }
-            $model->attributes['content'] = app(\App\Services\ImageMetadataService::class)->stripSrc($rawContent, $model->image_metadata ?? []);
         });
     }
 
@@ -120,11 +126,17 @@ class Post extends Model
 
     public function getOptimizedContentAttribute(): string
     {
-        return app(\App\Services\ImageMetadataService::class)->enhanceContent($this->getRawOriginal('content') ?? '', $this->image_metadata ?? []);
+        if ($this->enhancedContent === null) {
+            $this->enhancedContent = app(\App\Services\ImageMetadataService::class)->enhanceContent($this->getRawOriginal('content') ?? '', $this->image_metadata ?? []);
+        }
+        return $this->enhancedContent;
     }
 
     public function getContentAttribute($value)
     {
-        return app(\App\Services\ImageMetadataService::class)->restoreSrc($value ?? '', $this->image_metadata ?? []);
+        if ($this->restoredContent === null) {
+            $this->restoredContent = app(\App\Services\ImageMetadataService::class)->restoreSrc($value ?? '', $this->image_metadata ?? []);
+        }
+        return $this->restoredContent;
     }
 }
