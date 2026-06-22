@@ -6,14 +6,15 @@
 
 @section('content')
 <!-- Page Header Banner -->
-<div class="relative py-16 px-4 sm:px-6 lg:px-8 text-center bg-gray-50 dark:bg-slate-900 border-b border-gray-150 dark:border-slate-800/80">
-    <div class="max-w-4xl mx-auto space-y-4">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
+<div class="relative py-20 px-4 sm:px-6 lg:px-8 text-center overflow-hidden bg-cover bg-center border-b border-gray-150 dark:border-slate-800/80"
+     style="min-height: 380px; display: flex; align-items: center; justify-content: center; {{ $page->featured_image ? 'background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url(\'' . asset('storage/' . $page->featured_image) . '\'); color: white;' : 'background-color: rgb(249 250 251);' }}">
+    <div class="relative max-w-4xl mx-auto space-y-4 w-full">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight {{ $page->featured_image ? 'text-white' : 'text-gray-900 dark:text-white' }}">
             {{ $page->title }}
         </h1>
-        <div class="w-16 h-1.5 mx-auto rounded-full bg-indigo-600 dark:bg-indigo-400"></div>
+        <div class="w-16 h-1.5 mx-auto rounded-full {{ $page->featured_image ? 'bg-indigo-400' : 'bg-indigo-600 dark:bg-indigo-400' }}"></div>
         @if($page->meta_description)
-            <p class="max-w-2xl mx-auto text-gray-550 dark:text-slate-400 text-lg font-medium">
+            <p class="max-w-2xl mx-auto text-lg font-medium {{ $page->featured_image ? 'text-indigo-200' : 'text-gray-550 dark:text-slate-400' }}">
                 {{ $page->meta_description }}
             </p>
         @endif
@@ -23,12 +24,6 @@
 <!-- Main Content Area -->
 <div class="min-h-screen bg-white dark:bg-slate-950 py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {{-- Featured Image --}}
-        @if($page->featured_image)
-            <div class="mb-12 rounded-3xl overflow-hidden shadow-md border border-gray-150 dark:border-slate-800">
-                <img src="{{ asset('storage/' . $page->featured_image) }}" width="1200" height="500" loading="lazy" class="w-full h-auto max-h-[500px] object-cover" alt="{{ $page->title }}">
-            </div>
-        @endif
 
         {{-- Main Rich Content --}}
         <div class="prose prose-indigo prose-lg max-w-none dark:prose-invert text-gray-650 dark:text-slate-350 leading-relaxed 
