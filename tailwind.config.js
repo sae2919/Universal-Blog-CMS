@@ -16,6 +16,14 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                indigo: {
+                    650: '#4f46e5',
+                },
+                red: {
+                    650: '#dc2626',
+                },
+            },
         },
     },
 

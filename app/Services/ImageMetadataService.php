@@ -17,6 +17,7 @@ class ImageMetadataService
         $manager = new ImageManager(new Driver());
         $disk = Storage::disk('public');
         
+        $idToSrcMap = [];
         // Extract actual filenames from content HTML for matching
         $contentFilenames = [];
         if (!empty($content)) {
@@ -24,9 +25,25 @@ class ImageMetadataService
             foreach ($matches[1] as $src) {
                 $contentFilenames[] = basename(parse_url($src, PHP_URL_PATH));
             }
+
+            libxml_use_internal_errors(true);
+            $dom = new \DOMDocument();
+            $dom->loadHTML('<?xml encoding="utf-8" ?><div>' . $content . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+            libxml_clear_errors();
+            $images = $dom->getElementsByTagName('img');
+            foreach ($images as $img) {
+                $dataId = $img->getAttribute('data-image-id');
+                $src = $img->getAttribute('src');
+                if ($dataId && $src) {
+                    $idToSrcMap[$dataId] = $src;
+                }
+            }
         }
         
         foreach ($metadata as $id => &$info) {
+            if (isset($idToSrcMap[$id])) {
+                $info['url'] = $idToSrcMap[$id];
+            }
             $fileName = $info['fileName'] ?? null;
             if (!$fileName) {
                 continue;
@@ -218,6 +235,9 @@ class ImageMetadataService
             if ($filePath) {
                 $changed = true;
                 $img->setAttribute('src', asset('storage/' . $filePath));
+            } elseif (isset($info['url'])) {
+                $changed = true;
+                $img->setAttribute('src', $info['url']);
             }
         }
         
@@ -307,6 +327,8 @@ class ImageMetadataService
                 }
                 if ($filePath) {
                     $img->setAttribute('src', asset('storage/' . $filePath));
+                } elseif (isset($matchedInfo['url'])) {
+                    $img->setAttribute('src', $matchedInfo['url']);
                 }
                 
                 // Add width and height

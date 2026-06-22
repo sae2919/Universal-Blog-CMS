@@ -137,4 +137,46 @@ class PostTest extends TestCase
 
         $response->assertSessionHasErrors(['title', 'category_id', 'locale', 'content', 'status']);
     }
+
+    public function test_updating_post_retains_featured_image_file()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        
+        $imagePath = 'uploads/ai_generated_dummy.webp';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($imagePath, 'dummy image content');
+        
+        $post = Post::create([
+            'user_id' => $this->admin->id,
+            'category_id' => $this->category->id,
+            'title' => 'Post with image',
+            'slug' => 'post-with-image',
+            'excerpt' => 'Excerpt',
+            'content' => 'Content',
+            'status' => 'draft',
+            'locale' => 'en',
+            'featured_image' => $imagePath,
+        ]);
+        
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath));
+
+        $updateData = [
+            'title' => 'Updated Post Title',
+            'category_id' => $this->category->id,
+            'locale' => 'en',
+            'excerpt' => 'Excerpt',
+            'content' => 'Content',
+            'status' => 'published',
+            'generated_image_path' => $imagePath,
+        ];
+        
+        $response = $this->actingAs($this->admin)
+            ->put(route('admin.posts.update', $post->id), $updateData);
+
+        $response->assertRedirect(route('admin.posts.index'));
+        $response->assertSessionHas('success', 'Post updated successfully!');
+        
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath), 'Featured image file was deleted during update.');
+        $post->refresh();
+        $this->assertEquals($imagePath, $post->featured_image);
+    }
 }

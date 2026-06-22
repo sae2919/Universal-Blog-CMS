@@ -4,9 +4,19 @@
 
             {{-- Brand Column --}}
             <div>
-                <h3 class="text-white text-xl font-bold mb-3">
-                    {{ \App\Models\Setting::getValue('site_name', config('app.name')) }}
-                </h3>
+                <div class="mb-4">
+                    <a href="{{ url('/') }}" class="inline-block">
+                        @if(\App\Models\Setting::getValue('site_logo'))
+                            <img src="{{ asset('storage/' . \App\Models\Setting::getValue('site_logo')) }}"
+                                 alt="{{ \App\Models\Setting::getValue('site_name') }}"
+                                 class="h-8 w-auto">
+                        @else
+                            <span class="text-white text-xl font-bold">
+                                {{ \App\Models\Setting::getValue('site_name', config('app.name')) }}
+                            </span>
+                        @endif
+                    </a>
+                </div>
                 <p class="text-sm text-gray-300 leading-relaxed mb-5">
                     {{ \App\Models\Setting::getValue('site_tagline', 'Your go-to source for quality content.') }}
                 </p>

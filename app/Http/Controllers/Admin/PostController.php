@@ -209,10 +209,11 @@ class PostController extends Controller
             Storage::disk('public')->put('posts/' . $filename, $image);
             $validated['featured_image'] = 'posts/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
-            if ($post->featured_image && Storage::disk('public')->exists($post->featured_image)) {
+            $newPath = $request->input('generated_image_path');
+            if ($post->featured_image && $post->featured_image !== $newPath && Storage::disk('public')->exists($post->featured_image)) {
                 Storage::disk('public')->delete($post->featured_image);
             }
-            $validated['featured_image'] = $request->input('generated_image_path');
+            $validated['featured_image'] = $newPath;
         } elseif ($request->boolean('remove_featured_image')) {
             if ($post->featured_image && Storage::disk('public')->exists($post->featured_image)) {
                 Storage::disk('public')->delete($post->featured_image);

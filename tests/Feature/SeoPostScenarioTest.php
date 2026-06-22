@@ -82,10 +82,11 @@ class SeoPostScenarioTest extends TestCase
         $responseData = $response->json();
         $this->assertTrue($responseData['success']);
         
-        // Assert that the content contains the tiptap-image-wrapper and post-slider elements
+        // Assert that the content contains the tiptap-image-wrapper, post-slider and table elements
         $contentHtml = $responseData['content'];
         $this->assertStringContainsString('tiptap-image-wrapper', $contentHtml);
         $this->assertStringContainsString('post-slider', $contentHtml);
+        $this->assertStringContainsString('<table', $contentHtml);
 
         // --- Scenario 2: Database Storage of Generated Images ---
         // Verify that the generated/downloaded images are stored in the media table database.

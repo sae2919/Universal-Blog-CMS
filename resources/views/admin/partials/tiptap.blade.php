@@ -991,21 +991,21 @@
                                 <input type="text" id="link-url-${id}" class="w-full px-2.5 py-1.5 border border-gray-200 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="https://example.com" />
                             </div>
 
-                            <!-- Follow Status (Do Follow vs Don't Follow) -->
+                            <!-- Follow Status (Follow vs No Follow) -->
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Search Engine Relation</span>
                                 <div class="flex border border-gray-200 dark:border-slate-700 rounded overflow-hidden bg-gray-50 dark:bg-slate-900 text-[11px] leading-none">
-                                    <button type="button" id="link-rel-nofollow-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150">Don't Follow</button>
-                                    <button type="button" id="link-rel-dofollow-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Do Follow</button>
+                                    <button type="button" id="link-rel-nofollow-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150">No Follow</button>
+                                    <button type="button" id="link-rel-dofollow-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Follow</button>
                                 </div>
                             </div>
 
-                            <!-- Open in (Same Page vs Another Page) -->
+                            <!-- Open in (Same Tab vs Another Tab) -->
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Open In</span>
                                 <div class="flex border border-gray-200 dark:border-slate-700 rounded overflow-hidden bg-gray-50 dark:bg-slate-900 text-[11px] leading-none">
-                                    <button type="button" id="link-target-self-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150">Same Page</button>
-                                    <button type="button" id="link-target-blank-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Another Page</button>
+                                    <button type="button" id="link-target-self-${id}" class="flex-1 py-1.5 text-center font-medium text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 select-none transition-colors duration-150">Same Tab</button>
+                                    <button type="button" id="link-target-blank-${id}" class="flex-1 py-1.5 text-center font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 select-none transition-colors duration-150 border-l border-gray-200 dark:border-slate-700">Another Tab</button>
                                 </div>
                             </div>
 
@@ -1853,8 +1853,8 @@
                             }
 
                             // Determine activeRel and activeTarget
-                            let activeRel = 'nofollow'; // Default dont follow
-                            let activeTarget = '_blank'; // Default another page (to open outside by default)
+                            let activeRel = 'nofollow'; // Default no follow
+                            let activeTarget = '_blank'; // Default another tab (to open outside by default)
                             if (linkAttrs.href) {
                                 const rel = linkAttrs.rel || '';
                                 activeRel = rel.includes('nofollow') ? 'nofollow' : 'dofollow';

@@ -14,6 +14,8 @@ use Intervention\Image\Drivers\Gd\Driver;
 
 class AiController extends Controller
 {
+    private array $usedUrls = [];
+
     /**
      * Display the AI Assistant standalone dashboard.
      */
@@ -66,7 +68,8 @@ class AiController extends Controller
                             . "\nYou can insert high-quality, relevant inline images and an image slider into the HTML body content. Do not use markdown tags, write only valid HTML."
                             . "\n- For an inline image, insert: <img data-ai-prompt=\"A detailed descriptive prompt of what this image should show, e.g. a programmer coding in a dark room with neon lights\" />"
                             . "\n- For an image slider, insert: <div class=\"post-slider-placeholder\" data-ai-prompt=\"A detailed descriptive prompt for a set of 3-5 related stock photos, e.g. different views of a modern server database room\" data-count=\"3\"></div>"
-                            . "\nDo this for 1 to 2 inline images and exactly 1 image slider at appropriate logical breaks in the article.";
+                            . "\nDo this for 1 to 2 inline images and exactly 1 image slider at appropriate logical breaks in the article."
+                            . "\nCRITICAL: You MUST also include at least one relevant, well-structured comparison or summary table (using standard HTML <table>, <thead>, <tbody>, <tr>, <th>, <td> tags) in the generated HTML body content at an appropriate logical break. Ensure the table has clear headers and content related to the article topic.";
 
         $prompt = "System Instruction:\n{$systemInstruction}\n\nHere is what the user provided:\n";
         if (!empty($title)) {
@@ -124,7 +127,7 @@ class AiController extends Controller
             if (str_contains($titleLower, 'laravel') || str_contains($titleLower, 'php') || str_contains($titleLower, 'code') || str_contains($titleLower, 'program')) {
                 $outputTitle = !empty($title) ? $title : "Modern Web Development with PHP & Laravel";
                 $outputMetaTitle = "Laravel & PHP Web Development Best Practices | Guide";
-                $outputContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<p><img data-ai-prompt=\"minimalist desk setup with laptop displaying code, neon glow, sharp focus\" /></p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"creative coding environment, team working on software development\" data-count=\"3\"></div>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<p><img data-ai-prompt=\"minimalist desk setup with laptop displaying code, neon glow, sharp focus\" /></p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"creative coding environment, team working on software development\" data-count=\"3\"></div>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Laravel Performance Optimization Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Feature</th>\n      <th>Without Optimization</th>\n      <th>With Optimization</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Database Queries</td>\n      <td>N+1 query issues (slow loading)</td>\n      <td>Eager loading via <code>with()</code> (fast loading)</td>\n    </tr>\n    <tr>\n      <td>Caching</td>\n      <td>Hitting database on every request</td>\n      <td>Redis/Memcached query caching</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "Learn the essential clean coding practices and performance optimization techniques for modern web developers.";
                 $outputTags = ['Laravel', 'Programming', 'Clean Code'];
                 $outputKeywords = "laravel, clean code, SOLID principles, database optimization";
@@ -142,7 +145,7 @@ class AiController extends Controller
             } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'science') || str_contains($titleLower, 'python') || str_contains($titleLower, 'analyt')) {
                 $outputTitle = !empty($title) ? $title : "The Rise of Data-Driven Decisions and Python";
                 $outputMetaTitle = "Transition to Python Data Science & ML | Learning Path";
-                $outputContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<p><img data-ai-prompt=\"server room, glowing server racks, blue led lights\" /></p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"complex interactive data charts and graphs, analytics charts\" data-count=\"3\"></div>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<p><img data-ai-prompt=\"server room, glowing server racks, blue led lights\" /></p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"complex interactive data charts and graphs, analytics charts\" data-count=\"3\"></div>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Core Python Data Science Libraries</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Library</th>\n      <th>Primary Use Case</th>\n      <th>Key Feature</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Pandas</td>\n      <td>Data manipulation and analysis</td>\n      <td>DataFrame structures</td>\n    </tr>\n    <tr>\n      <td>NumPy</td>\n      <td>Numerical computation</td>\n      <td>N-dimensional arrays</td>\n    </tr>\n    <tr>\n      <td>Scikit-Learn</td>\n      <td>Machine Learning</td>\n      <td>Regression, classification, clustering</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "A comprehensive roadmap for developers looking to transition into data science and predictive analytics using Python.";
                 $outputTags = ['Python', 'Data Science', 'Machine Learning'];
                 $outputKeywords = "data science, python, machine learning, pandas, scikit-learn";
@@ -160,7 +163,8 @@ class AiController extends Controller
             } else {
                 $outputTitle = !empty($title) ? $title : "Exploring the Future of Technology and Software Design";
                 $outputMetaTitle = "Future of Software Design & Tech Trends in 2026";
-                $outputContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<p><img data-ai-prompt=\"futuristic cyber room, artificial intelligence hologram\" /></p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"modern smart city technology, dynamic connected web of technology\" data-count=\"3\"></div>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<p><img data-ai-prompt=\"futuristic cyber room, artificial intelligence hologram\" /></p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"modern smart city technology, dynamic connected web of technology\" data-count=\"3\"></div>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Tech Trends Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Trend</th>\n      <th>Impact</th>\n      <th>Complexity</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Automation</td>\n      <td>High efficiency, low error rates</td>\n      <td>Moderate setup effort</td>
+    </tr>\n    <tr>\n      <td>AI Integration</td>\n      <td>Personalized experience, analytics</td>\n      <td>High setup effort</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "An overview of core principles for building scalable modern tech solutions, focusing on simplicity and iteration.";
                 $outputTags = ['Technology', 'Software Design', 'Development'];
                 $outputKeywords = "technology, development, software design, MVP, optimization";
@@ -185,7 +189,7 @@ class AiController extends Controller
         $featuredUrl = $this->getUnsplashUrlForPrompt($outputTitle);
         $featuredData = $this->saveImageFromUrl($featuredUrl);
         if (!$featuredData) {
-            $featuredData = $this->getFallbackImagePayload();
+            $featuredData = $this->getFallbackImagePayload($featuredUrl);
         } else {
             // Register featured image metadata
             $fileSize = 0;
@@ -440,7 +444,7 @@ class AiController extends Controller
         }
 
         // Fallback in case request times out or is offline
-        $fallback = $this->getFallbackImagePayload();
+        $fallback = $this->getFallbackImagePayload($url);
         return response()->json($fallback);
     }
 
@@ -491,13 +495,17 @@ class AiController extends Controller
     /**
      * Return fallback image structure.
      */
-    private function getFallbackImagePayload()
+    private function getFallbackImagePayload(?string $url = null)
     {
+        $resolvedUrl = $url ?? 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200';
+        $pathInfo = parse_url($resolvedUrl, PHP_URL_PATH);
+        $baseName = basename($pathInfo);
+        $fileName = (str_contains($baseName, '.') ? $baseName : $baseName . '.jpg');
         return [
             'success' => true,
-            'url' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200',
-            'path' => 'posts/default-ai.jpg',
-            'fileName' => 'default-ai.jpg',
+            'url' => $resolvedUrl,
+            'path' => 'posts/' . $fileName,
+            'fileName' => $fileName,
             'media_id' => null,
             'offline' => true,
         ];
@@ -512,45 +520,64 @@ class AiController extends Controller
             'ai' => [
                 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200',
                 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200',
-                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200'
+                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200',
+                'https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=1200',
+                'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200',
+                'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1200'
             ],
             'code' => [
                 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200',
                 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200',
-                'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200'
+                'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200',
+                'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200',
+                'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=1200',
+                'https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=1200'
             ],
             'data' => [
                 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200',
                 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
-                'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1200'
+                'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1200',
+                'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200',
+                'https://images.unsplash.com/photo-1543606996-74250aa4d287?w=1200',
+                'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200'
             ],
             'design' => [
                 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200',
-                'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=1200'
+                'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=1200',
+                'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=1200',
+                'https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200',
+                'https://images.unsplash.com/photo-1561070791-26c113006238?w=1200'
             ],
             'security' => [
                 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200',
-                'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200'
+                'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200',
+                'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200',
+                'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1200'
             ],
             'mobile' => [
                 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200',
-                'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200'
+                'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=1200',
+                'https://images.unsplash.com/photo-1565630916779-e303be97b6f5?w=1200'
             ],
             'cloud' => [
                 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
-                'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200'
+                'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200',
+                'https://images.unsplash.com/photo-1597733336794-12d05021d510?w=1200'
             ],
             'business' => [
                 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200',
-                'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200'
+                'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200',
+                'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200'
             ],
             'nature' => [
                 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200',
-                'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200'
+                'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200',
+                'https://images.unsplash.com/photo-1472214222541-d510753a4907?w=1200'
             ],
             'writing' => [
                 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200',
-                'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200'
+                'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200',
+                'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200'
             ]
         ];
 
@@ -580,8 +607,30 @@ class AiController extends Controller
         }
 
         $list = $urls[$matchedCategory];
-        $index = strlen($prompt) % count($list);
-        return $list[$index];
+
+        // Filter out URLs already used in the current generation request to prevent repetition
+        $unusedList = array_values(array_diff($list, $this->usedUrls));
+
+        if (empty($unusedList)) {
+            // Collect unused URLs from all other categories to prevent repetition
+            $allUrls = [];
+            foreach ($urls as $cat => $catUrls) {
+                $allUrls = array_merge($allUrls, $catUrls);
+            }
+            $unusedList = array_values(array_diff($allUrls, $this->usedUrls));
+        }
+
+        if (empty($unusedList)) {
+            $unusedList = $list;
+        }
+
+        // Pick a random URL from the remaining unused options
+        $selectedUrl = $unusedList[array_rand($unusedList)];
+
+        // Record it as used
+        $this->usedUrls[] = $selectedUrl;
+
+        return $selectedUrl;
     }
 
     /**
@@ -609,7 +658,7 @@ class AiController extends Controller
                 $url = $this->getUnsplashUrlForPrompt($aiPrompt);
                 $imgData = $this->saveImageFromUrl($url);
                 if (!$imgData) {
-                    $imgData = $this->getFallbackImagePayload();
+                    $imgData = $this->getFallbackImagePayload($url);
                 }
 
                 $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
@@ -658,7 +707,7 @@ class AiController extends Controller
                     $url = $this->getUnsplashUrlForPrompt($uniquePrompt);
                     $imgData = $this->saveImageFromUrl($url);
                     if (!$imgData) {
-                        $imgData = $this->getFallbackImagePayload();
+                        $imgData = $this->getFallbackImagePayload($url);
                     }
 
                     $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;

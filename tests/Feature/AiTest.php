@@ -31,7 +31,7 @@ class AiTest extends TestCase
     {
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.ai.generate-article'), [
-                'content' => 'This is a laravel post with some text.',
+                'title' => 'Laravel performance optimization guides',
             ]);
 
         $response->assertStatus(200)
@@ -61,6 +61,7 @@ class AiTest extends TestCase
         // Ensure placeholders were replaced with tiptap wrapper and post-slider class
         $this->assertStringContainsString('tiptap-image-wrapper', $content);
         $this->assertStringContainsString('post-slider', $content);
+        $this->assertStringContainsString('<table', $content);
         $this->assertStringNotContainsString('data-ai-prompt', $content);
         $this->assertStringNotContainsString('post-slider-placeholder', $content);
     }
@@ -100,5 +101,24 @@ class AiTest extends TestCase
             ->assertJson([
                 'success' => true,
             ]);
+    }
+
+    public function test_generate_article_does_not_repeat_unsplash_images()
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.ai.generate-article'), [
+                'title' => 'Laravel code optimization python data science',
+            ]);
+
+        $response->assertStatus(200);
+        $media = $response->json('generated_media');
+        
+        $this->assertIsArray($media);
+        $this->assertGreaterThanOrEqual(2, count($media));
+
+        $fileNames = array_column($media, 'fileName');
+        $uniqueFileNames = array_unique($fileNames);
+        
+        $this->assertCount(count($fileNames), $uniqueFileNames, 'Image filenames were duplicated in the generated article.');
     }
 }

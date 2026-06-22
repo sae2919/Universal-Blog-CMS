@@ -275,4 +275,47 @@ class ImageMetadataTest extends TestCase
         $this->assertStringContainsString('aspect-ratio: 800 / 600', $optimizedHtml);
         $this->assertStringContainsString('aspect-ratio: 1000 / 800', $optimizedHtml);
     }
+
+    public function test_offline_fallback_external_image_url_restoration()
+    {
+        $metadata = [
+            'img_external' => [
+                'fileName' => 'photo-12345.jpg',
+                'fileType' => 'image/jpeg',
+                'fileSize' => 0,
+            ]
+        ];
+
+        $htmlContent = '<p><img data-image-id="img_external" src="https://images.unsplash.com/photo-12345?w=1200" /></p>';
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('admin.posts.store'), [
+                'title' => 'Offline Fallback URL Post',
+                'category_id' => $this->category->id,
+                'locale' => 'en',
+                'excerpt' => 'An excerpt',
+                'content' => $htmlContent,
+                'status' => 'published',
+                'image_metadata' => json_encode($metadata),
+            ]);
+
+        $response->assertRedirect(route('admin.posts.index'));
+
+        $rawPostContent = \DB::table('posts')->where('title', 'Offline Fallback URL Post')->value('content');
+        $post = Post::where('title', 'Offline Fallback URL Post')->firstOrFail();
+
+        // 1. Assert src is stripped in DB
+        $this->assertStringNotContainsString('src=', $rawPostContent);
+        $this->assertStringContainsString('data-image-id="img_external"', $rawPostContent);
+
+        // 2. Assert url is stored in DB image_metadata
+        $this->assertArrayHasKey('img_external', $post->image_metadata);
+        $this->assertEquals('https://images.unsplash.com/photo-12345?w=1200', $post->image_metadata['img_external']['url']);
+
+        // 3. Assert getContentAttribute restores Unsplash URL
+        $this->assertStringContainsString('src="https://images.unsplash.com/photo-12345?w=1200"', $post->content);
+
+        // 4. Assert getOptimizedContentAttribute restores Unsplash URL
+        $this->assertStringContainsString('src="https://images.unsplash.com/photo-12345?w=1200"', $post->optimized_content);
+    }
 }

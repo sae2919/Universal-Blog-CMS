@@ -134,10 +134,11 @@ class PageController extends Controller
             \Storage::disk('public')->put('pages/' . $filename, $image);
             $validated['featured_image'] = 'pages/' . $filename;
         } elseif ($request->filled('generated_image_path')) {
-            if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
+            $newPath = $request->input('generated_image_path');
+            if ($page->featured_image && $page->featured_image !== $newPath && \Storage::disk('public')->exists($page->featured_image)) {
                 \Storage::disk('public')->delete($page->featured_image);
             }
-            $validated['featured_image'] = $request->input('generated_image_path');
+            $validated['featured_image'] = $newPath;
         } elseif ($request->boolean('remove_featured_image')) {
             if ($page->featured_image && \Storage::disk('public')->exists($page->featured_image)) {
                 \Storage::disk('public')->delete($page->featured_image);
