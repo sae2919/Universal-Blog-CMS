@@ -6,8 +6,8 @@
 
 @section('content')
 <!-- Page Header Banner -->
-<div class="relative py-20 px-4 sm:px-6 lg:px-8 text-center overflow-hidden bg-cover bg-center border-b border-gray-150 dark:border-slate-800/80"
-     style="min-height: 380px; display: flex; align-items: center; justify-content: center; {{ $page->featured_image ? 'background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url(\'' . asset('storage/' . $page->featured_image) . '\'); color: white;' : 'background-color: rgb(249 250 251);' }}">
+<div class="relative py-12 px-4 sm:px-6 lg:px-8 text-center overflow-hidden bg-cover bg-center border-b border-gray-150 dark:border-slate-800/80"
+     style="min-height: 240px; display: flex; align-items: center; justify-content: center; {{ $page->featured_image ? 'background-image: linear-gradient(135deg, rgba(30, 27, 75, 0.85), rgba(15, 23, 42, 0.95)), url(\'' . asset('storage/' . $page->featured_image) . '\'); background-blend-mode: multiply; color: white;' : 'background-color: rgb(249 250 251);' }}">
     <div class="relative max-w-4xl mx-auto space-y-4 w-full">
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight {{ $page->featured_image ? 'text-white' : 'text-gray-900 dark:text-white' }}">
             {{ $page->title }}

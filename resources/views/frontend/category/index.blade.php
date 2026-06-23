@@ -1,99 +1,138 @@
 @extends('layouts.frontend')
 
-@section('meta_title', $category->name . ' Articles — ' . \App\Models\Setting::getValue('site_name'))
+@section('meta_title', $category->name . ' — ' . \App\Models\Setting::getValue('site_name'))
 @section('meta_description', $category->description ?? 'Read posts about ' . $category->name)
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-    {{-- Header Banner --}}
-    <header class="rounded-2xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden"
-            style="background: linear-gradient(135deg, {{ $category->accent_color }} 0%, #0f172a 100%);">
-        <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-        <div class="relative z-10 max-w-2xl space-y-4">
-            <span class="text-xs font-bold tracking-widest uppercase bg-white/10 text-indigo-100 px-3 py-1 rounded-full border border-white/20">
-                Category
-            </span>
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-                {{ $category->icon_emoji }} {{ $category->name }}
-            </h1>
-            @if($category->description)
-                <p class="text-lg text-slate-350 leading-relaxed">{{ $category->description }}</p>
-            @endif
+@php
+    $categories = \Illuminate\Support\Facades\Cache::remember('categories.list.with_count.' . app()->getLocale(), now()->addHours(6), function() {
+        return \App\Models\Category::active()->orderBy('name')->withCount(['posts' => function($q) {
+            $q->published();
+        }])->get();
+    });
+@endphp
+
+<!-- Page Header Banner -->
+<div class="relative py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 text-center bg-cover bg-top bg-no-repeat transition-all duration-300 mb-8 md:mb-12"
+     style="background-image: url('{{ asset('images/blogg.png') }}');">
+    {{-- Dark mode background overlay --}}
+    <div class="absolute inset-0 bg-slate-950/80 opacity-0 dark:opacity-100 transition-opacity duration-300"></div>
+    
+    <div class="relative max-w-4xl mx-auto space-y-4 w-full z-10">
+        <h1 class="text-[34px] md:text-[48px] lg:text-[64px] font-semibold leading-[37px] md:leading-[54px] lg:leading-[70px] text-[#000d44] dark:text-white tracking-tight font-heading">
+            {{ $category->name }}
+        </h1>
+        
+        {{-- Breadcrumbs --}}
+        <div class="flex items-center justify-center gap-1.5 text-sm font-semibold text-[#788094] dark:text-slate-350">
+            <a href="{{ url('/') }}" class="text-[#000d44] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ __('Home') }}</a>
+            <span class="text-gray-400 dark:text-slate-600 px-1">/</span>
+            <a href="{{ route('blog.index') }}" class="text-[#000d44] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ __('Blog') }}</a>
+            <span class="text-gray-400 dark:text-slate-600 px-1">/</span>
+            <span class="text-[#788094] dark:text-slate-400">{{ $category->name }}</span>
         </div>
-    </header>
-
-    {{-- Articles Grid --}}
-    <div class="space-y-10">
-        <h2 class="text-2xl font-extrabold text-gray-900 border-b border-gray-100 pb-4 flex items-center gap-2">
-            📰 Articles in {{ $category->name }}
-        </h2>
-
-        @if($posts->count() > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                @foreach($posts as $post)
-                    <article class="bg-white rounded-xl shadow-sm border border-gray-150 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
-                        {{-- Cover Image --}}
-                        <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="block relative h-48 w-full overflow-hidden bg-gray-100 group">
-                            @if($post->featured_image)
-                                <img src="{{ asset('storage/' . $post->featured_image) }}" width="400" height="240" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $post->title }}">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center font-bold text-gray-600 text-sm bg-indigo-50/50">
-                                    {{ $category->name }}
-                                </div>
-                            @endif
-                        </a>
-
-                        {{-- Card Body --}}
-                        <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
-                            <div class="space-y-2">
-                                <span class="text-xs font-bold uppercase tracking-wider" style="color: {{ $category->accent_color }};">
-                                    {{ $category->icon_emoji }} {{ $category->name }}
-                                </span>
-                                <h3 class="text-xl font-bold text-gray-900 leading-snug hover:text-indigo-600 transition-colors">
-                                    <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}">{{ $post->title }}</a>
-                                </h3>
-                                <p class="text-sm text-gray-550 line-clamp-3 leading-relaxed">{{ $post->excerpt }}</p>
-                            </div>
-
-                            {{-- Footer Info --}}
-                            <div class="flex items-center gap-3 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center flex-shrink-0">
-                                    {{ strtoupper(substr($post->author->name, 0, 1)) }}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <span class="font-semibold text-gray-900 block truncate leading-none mb-1">{{ $post->author->name }}</span>
-                                    <div class="flex flex-wrap items-center gap-1.5 text-gray-600">
-                                        <span class="inline-flex items-center py-1">{{ $post->published_at ? $post->published_at->format('M d, Y') : $post->created_at->format('M d, Y') }}</span>
-                                        <span>·</span>
-                                        <span class="inline-flex items-center gap-0.5 py-1">
-                                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                            {{ number_format($post->views) }} {{ __('views') }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-
-            {{-- Pagination --}}
-            @if($posts->hasPages())
-                <div class="pt-6">
-                    {{ $posts->links() }}
-                </div>
-            @endif
-        @else
-            <div class="text-center py-16 bg-white rounded-xl border border-gray-150 p-8 text-gray-500">
-                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
-                </svg>
-                <p class="text-lg font-semibold">No articles found in this category.</p>
-                <p class="text-sm text-gray-600 mt-1">Check back later for new content updates!</p>
-            </div>
-        @endif
     </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 space-y-10">
+    
+    {{-- Search and Categories Filter Bar --}}
+    <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 pb-2">
+        {{-- Categories Pills (Horizontal scroll on mobile, wrap on desktop) --}}
+        <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1.5 flex-1 -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap lg:flex-wrap">
+            <a href="{{ route('blog.index') }}" 
+               class="px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 bg-white border border-gray-200 text-gray-650 hover:border-indigo-600 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white dark:hover:border-slate-700">
+                {{ __('All Posts') }}
+            </a>
+            @foreach($categories as $cat)
+                <a href="{{ route('blog.category', $cat->slug) }}" 
+                   class="px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 {{ $category->id == $cat->id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none' : 'bg-white border border-gray-200 text-gray-650 hover:border-indigo-600 hover:text-indigo-600 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white dark:hover:border-slate-700' }}">
+                    {{ $cat->name }}
+                    @if(isset($cat->posts_count))
+                        <span class="text-xs opacity-75 ml-0.5">({{ $cat->posts_count }})</span>
+                    @endif
+                </a>
+            @endforeach
+        </div>
+
+        {{-- Search Input --}}
+        <form action="{{ route('blog.search') }}" method="GET" class="w-full lg:w-80 relative flex-shrink-0">
+            <input type="text" name="q" placeholder="Search articles..." value="{{ request('q') }}" aria-label="Search posts"
+                   class="w-full pl-11 pr-4 py-2.5 border border-gray-200 dark:border-slate-800 rounded-full text-sm bg-white dark:bg-slate-900 text-gray-850 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all shadow-sm">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+        </form>
+    </div>
+
+    {{-- Full-width Grid Layout (No Sidebar) --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-[30px]">
+        @forelse($posts as $post)
+            <article class="flex flex-col h-full bg-transparent group relative blog-card-hover-blink">
+                {{-- Cover Image --}}
+                <div class="relative overflow-hidden aspect-[16/10] w-full rounded-[10px] bg-gray-100 dark:bg-slate-950">
+                    <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" class="absolute inset-0 z-10" aria-label="{{ $post->title }}"></a>
+                    @if($post->featured_image)
+                        <img src="{{ asset('storage/' . $post->featured_image) }}" width="400" height="250" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" alt="{{ $post->title }}">
+                    @else
+                        <div class="w-full h-full flex items-center justify-center font-bold text-gray-400 text-sm bg-indigo-50/50 dark:bg-indigo-950/20">
+                            Blog Image
+                        </div>
+                    @endif
+                    {{-- Overlay hover background --}}
+                    <div class="absolute inset-0 bg-indigo-600 hover-blink-overlay opacity-0 pointer-events-none"></div>
+                </div>
+
+                {{-- Card Body --}}
+                <div class="pt-4 flex-1 flex flex-col justify-between">
+                    <div class="space-y-2">
+                        {{-- Date --}}
+                        <div class="text-xs font-semibold text-[#9C9C9C] dark:text-slate-500 uppercase tracking-wider">
+                            {{ $post->published_at ? $post->published_at->format('M d, Y') : $post->created_at->format('M d, Y') }}
+                        </div>
+                        
+                        {{-- Title --}}
+                        <h3 class="text-[22px] font-semibold leading-[28px] text-[#000d44] dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-heading tracking-tight line-clamp-2">
+                            <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}">{{ $post->title }}</a>
+                        </h3>
+
+                        {{-- Excerpt --}}
+                        @if($post->excerpt)
+                            <p class="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-medium">
+                                {{ $post->excerpt }}
+                            </p>
+                        @endif
+                    </div>
+
+                    {{-- Read More --}}
+                    <div class="pt-3">
+                        <a href="{{ route('blog.show', [$post->category->slug, $post->slug]) }}" 
+                           class="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-[#000d44] dark:hover:text-white transition-colors group/btn">
+                            <span>Read More</span>
+                            <svg class="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+        @empty
+            <div class="col-span-full text-center py-16 text-gray-600 dark:text-slate-400">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-200 dark:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <p class="text-sm">{{ __('No articles published in this category yet.') }}</p>
+            </div>
+        @endforelse
+    </div>
+
+    {{-- Pagination --}}
+    @if($posts->hasPages())
+        <div class="mt-12 flex justify-center">
+            {{ $posts->links() }}
+        </div>
+    @endif
 </div>
 @endsection

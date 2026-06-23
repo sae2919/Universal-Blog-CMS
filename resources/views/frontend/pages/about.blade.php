@@ -6,8 +6,8 @@
 
 @section('content')
 <!-- Page Header Banner -->
-<div class="relative text-white py-20 px-4 sm:px-6 lg:px-8 text-center overflow-hidden bg-cover bg-center" 
-     style="min-height: 380px; display: flex; align-items: center; justify-content: center; {{ $page->featured_image ? 'background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url(\'' . asset('storage/' . $page->featured_image) . '\');' : 'background: linear-gradient(135deg, #1e1b4b, #0f172a, #0f172a);' }}">
+<div class="relative text-white py-12 px-4 sm:px-6 lg:px-8 text-center overflow-hidden bg-cover bg-center" 
+     style="min-height: 240px; display: flex; align-items: center; justify-content: center; {{ $page->featured_image ? 'background-image: linear-gradient(135deg, rgba(30, 27, 75, 0.85), rgba(15, 23, 42, 0.95)), url(\'' . asset('storage/' . $page->featured_image) . '\'); background-blend-mode: multiply;' : 'background: linear-gradient(135deg, #1e1b4b, #0f172a, #0f172a);' }}">
     @if(!$page->featured_image)
         <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
     @endif

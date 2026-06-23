@@ -357,4 +357,46 @@
     scrollbar-width: none !important;  /* Firefox */
 }
 
+/* Global Heading Font Outfit */
+h1, h2, h3, h4, h5, h6, .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Premium Blog Card Blinking Hover Glow & Overlay Pulse */
+@keyframes blog-card-glow {
+    0%, 100% {
+        box-shadow: 0 0 0px rgba(31, 95, 255, 0);
+        border-color: rgba(31, 95, 255, 0.08);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(31, 95, 255, 0.3);
+        border-color: rgba(31, 95, 255, 0.4);
+    }
+}
+@keyframes blog-image-blink {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.22;
+    }
+}
+.blog-card-hover-blink {
+    border: 1px solid transparent;
+    border-radius: 16px;
+    padding: 12px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.blog-card-hover-blink:hover {
+    animation: blog-card-glow 1.5s infinite ease-in-out;
+    background-color: rgba(31, 95, 255, 0.015);
+}
+.dark .blog-card-hover-blink:hover {
+    background-color: rgba(255, 255, 255, 0.008);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.blog-card-hover-blink:hover .hover-blink-overlay {
+    animation: blog-image-blink 1.5s infinite ease-in-out;
+}
+
 

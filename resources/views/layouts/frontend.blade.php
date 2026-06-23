@@ -51,7 +51,7 @@
     {{-- Fonts — preconnect to both Google APIs and font file CDN (prevents extra DNS round-trip) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family={{ urlencode(\App\Models\Setting::getValue('site_font', 'Inter')) }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
@@ -68,7 +68,7 @@
     </script>
     @endif
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" style="font-family: '{{ \App\Models\Setting::getValue('site_font', 'Inter') }}', sans-serif;">
+<body class="bg-gray-50 text-gray-900 antialiased" style="font-family: 'DM Sans', sans-serif;">
 
     {{-- Header --}}
     @include('frontend.partials.header')

@@ -84,6 +84,10 @@ Route::post('/{categorySlug}/{postSlug}/comment', [BlogController::class, 'store
 Route::post('/contact-us', [BlogController::class, 'submitContact'])
     ->name('contact.submit');
 
+// Guest post submission
+Route::post('/write-for-us', [BlogController::class, 'submitGuestPost'])
+    ->name('guest-post.submit');
+
 // Single static page (Catch-all - MUST be at the bottom)
 Route::get('/{slug}', [BlogController::class, 'showPage'])
     ->name('page.show')

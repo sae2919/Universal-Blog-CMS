@@ -27,10 +27,17 @@ class AppServiceProvider extends ServiceProvider
 
             $locale = app()->getLocale();
             $headerPages = \Illuminate\Support\Facades\Cache::remember("nav.pages.header.{$locale}", now()->addHours(6), function () use ($locale) {
-                return \App\Models\Page::published()
+                $pages = \App\Models\Page::published()
                     ->where('locale', $locale)
                     ->where('show_in_header', true)
                     ->get();
+                if ($pages->isEmpty() && $locale !== 'en') {
+                    $pages = \App\Models\Page::published()
+                        ->where('locale', 'en')
+                        ->where('show_in_header', true)
+                        ->get();
+                }
+                return $pages;
             });
 
             $view->with('mainMenu', $mainMenu);
@@ -44,10 +51,17 @@ class AppServiceProvider extends ServiceProvider
 
             $locale = app()->getLocale();
             $footerPages = \Illuminate\Support\Facades\Cache::remember("nav.pages.footer.{$locale}", now()->addHours(6), function () use ($locale) {
-                return \App\Models\Page::published()
+                $pages = \App\Models\Page::published()
                     ->where('locale', $locale)
                     ->where('show_in_footer', true)
                     ->get();
+                if ($pages->isEmpty() && $locale !== 'en') {
+                    $pages = \App\Models\Page::published()
+                        ->where('locale', 'en')
+                        ->where('show_in_footer', true)
+                        ->get();
+                }
+                return $pages;
             });
 
             $view->with('footerMenu', $footerMenu);
