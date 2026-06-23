@@ -68,10 +68,7 @@ class AiController extends Controller
         }
         $systemInstruction .= "\nAdditionally, you must also generate 3 to 5 relevant Frequently Asked Questions (FAQs) with their concise HTML-formatted answers (using <p> tags, etc.) based on the article's topic or content."
                             . "\nCRITICAL: You must generate a distinct 'meta_title' (under 60 characters) containing target search keywords, which should be different from the main article 'title'."
-                            . "\nYou can insert high-quality, relevant inline images and an image slider into the HTML body content. Do not use markdown tags, write only valid HTML."
-                            . "\n- For an inline image, insert: <img data-ai-prompt=\"A detailed descriptive prompt of what this image should show, e.g. a programmer coding in a dark room with neon lights\" />"
-                            . "\n- For an image slider, insert: <div class=\"post-slider-placeholder\" data-ai-prompt=\"A detailed descriptive prompt for a set of 3-5 related stock photos, e.g. different views of a modern server database room\" data-count=\"3\"></div>"
-                            . "\nDo this for 1 to 2 inline images and exactly 1 image slider at appropriate logical breaks in the article."
+                            . "\nCRITICAL: Do NOT insert any images, image placeholders, or image sliders into the HTML body content. Focus entirely on high-quality text, headings, lists, tables, and paragraphs."
                             . "\nCRITICAL: You MUST also include at least one relevant, well-structured comparison or summary table (using standard HTML <table>, <thead>, <tbody>, <tr>, <th>, <td> tags) in the generated HTML body content at an appropriate logical break. Ensure the table has clear headers and content related to the article topic.";
 
         $prompt = "System Instruction:\n{$systemInstruction}\n\nHere is what the user provided:\n";
@@ -130,7 +127,7 @@ class AiController extends Controller
             if (str_contains($titleLower, 'laravel') || str_contains($titleLower, 'php') || str_contains($titleLower, 'code') || str_contains($titleLower, 'program')) {
                 $outputTitle = !empty($title) ? $title : "Modern Web Development with PHP & Laravel";
                 $outputMetaTitle = "Laravel & PHP Web Development Best Practices | Guide";
-                $outputContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<p><img data-ai-prompt=\"minimalist desk setup with laptop displaying code, neon glow, sharp focus\" /></p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"creative coding environment, team working on software development\" data-count=\"3\"></div>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Laravel Performance Optimization Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Feature</th>\n      <th>Without Optimization</th>\n      <th>With Optimization</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Database Queries</td>\n      <td>N+1 query issues (slow loading)</td>\n      <td>Eager loading via <code>with()</code> (fast loading)</td>\n    </tr>\n    <tr>\n      <td>Caching</td>\n      <td>Hitting database on every request</td>\n      <td>Redis/Memcached query caching</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>Introduction to Modern Development</h2>\n<p>Developing scalable web applications requires a robust architecture, clear separations of concerns, and clean coding principles. In modern environments, frameworks like Laravel provide these foundations out of the box, allowing teams to deliver features quickly without sacrificing maintainability.</p>\n<h3>1. Follow SOLID Principles</h3>\n<p>Writing clean code starts with solid design principles. Ensure your classes have single responsibilities, dependencies are inverted, and interfaces are tailored to specific components. This decreases coupling and makes testing a breeze.</p>\n<h3>2. Optimize Database Performance</h3>\n<p>Database queries are often the bottleneck in web applications. Use Eloquent relationship eager loading (e.g. <code>with()</code>) to prevent N+1 query problems, configure indices appropriately, and cache heavy query results when necessary.</p>\n<h3>Laravel Performance Optimization Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Feature</th>\n      <th>Without Optimization</th>\n      <th>With Optimization</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Database Queries</td>\n      <td>N+1 query issues (slow loading)</td>\n      <td>Eager loading via <code>with()</code> (fast loading)</td>\n    </tr>\n    <tr>\n      <td>Caching</td>\n      <td>Hitting database on every request</td>\n      <td>Redis/Memcached query caching</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>By establishing strict standards and utilizing the latest ecosystem tools, you can ensure your web platform remains performant and ready to scale.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "Learn the essential clean coding practices and performance optimization techniques for modern web developers.";
                 $outputTags = ['Laravel', 'Programming', 'Clean Code'];
                 $outputKeywords = "laravel, clean code, SOLID principles, database optimization";
@@ -148,7 +145,7 @@ class AiController extends Controller
             } elseif (str_contains($titleLower, 'data') || str_contains($titleLower, 'science') || str_contains($titleLower, 'python') || str_contains($titleLower, 'analyt')) {
                 $outputTitle = !empty($title) ? $title : "The Rise of Data-Driven Decisions and Python";
                 $outputMetaTitle = "Transition to Python Data Science & ML | Learning Path";
-                $outputContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<p><img data-ai-prompt=\"server room, glowing server racks, blue led lights\" /></p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"complex interactive data charts and graphs, analytics charts\" data-count=\"3\"></div>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Core Python Data Science Libraries</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Library</th>\n      <th>Primary Use Case</th>\n      <th>Key Feature</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Pandas</td>\n      <td>Data manipulation and analysis</td>\n      <td>DataFrame structures</td>\n    </tr>\n    <tr>\n      <td>NumPy</td>\n      <td>Numerical computation</td>\n      <td>N-dimensional arrays</td>\n    </tr>\n    <tr>\n      <td>Scikit-Learn</td>\n      <td>Machine Learning</td>\n      <td>Regression, classification, clustering</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>The Rise of Data-Driven Decisions</h2>\n<p>Data science has transformed how businesses operate, enabling organizations to derive actionable insights from complex datasets. Python has emerged as the premier language for this work, offering a rich ecosystem of packages for analytical and predictive workflows.</p>\n<h3>1. Core Python Packages</h3>\n<p>To start in data science, you must master the fundamental libraries: <code>pandas</code> for data manipulation, <code>numpy</code> for numerical computations, and <code>matplotlib</code> or <code>seaborn</code> for visual analysis.</p>\n<h3>2. Building Machine Learning Pipelines</h3>\n<p>Once data is prepared, frameworks like <code>scikit-learn</code> allow developers to train predictive models easily. Focus on building clean validation splits and choosing the appropriate algorithm for classification or regression tasks.</p>\n<h3>Core Python Data Science Libraries</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Library</th>\n      <th>Primary Use Case</th>\n      <th>Key Feature</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Pandas</td>\n      <td>Data manipulation and analysis</td>\n      <td>DataFrame structures</td>\n    </tr>\n    <tr>\n      <td>NumPy</td>\n      <td>Numerical computation</td>\n      <td>N-dimensional arrays</td>\n    </tr>\n    <tr>\n      <td>Scikit-Learn</td>\n      <td>Machine Learning</td>\n      <td>Regression, classification, clustering</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Starting with small, structured projects is the best way to transition into data modeling and predictive analytics.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "A comprehensive roadmap for developers looking to transition into data science and predictive analytics using Python.";
                 $outputTags = ['Python', 'Data Science', 'Machine Learning'];
                 $outputKeywords = "data science, python, machine learning, pandas, scikit-learn";
@@ -166,8 +163,7 @@ class AiController extends Controller
             } else {
                 $outputTitle = !empty($title) ? $title : "Exploring the Future of Technology and Software Design";
                 $outputMetaTitle = "Future of Software Design & Tech Trends in 2026";
-                $outputContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<p><img data-ai-prompt=\"futuristic cyber room, artificial intelligence hologram\" /></p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<div class=\"post-slider-placeholder\" data-ai-prompt=\"modern smart city technology, dynamic connected web of technology\" data-count=\"3\"></div>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Tech Trends Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Trend</th>\n      <th>Impact</th>\n      <th>Complexity</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Automation</td>\n      <td>High efficiency, low error rates</td>\n      <td>Moderate setup effort</td>
-    </tr>\n    <tr>\n      <td>AI Integration</td>\n      <td>Personalized experience, analytics</td>\n      <td>High setup effort</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
+                $outputContent = !empty($content) ? $content : "<h2>Exploring the Future of Tech</h2>\n<p>As the digital landscape evolves, staying ahead of trends requires consistent learning, experimentation, and adaptation. The integration of modern software architectures and automation tools is shaping how products are designed and maintained.</p>\n<h3>1. Core Principles</h3>\n<p>Whether you are designing a user interface or setting up system operations, simplicity is key. Avoid over-engineering, document your workflows, and automate repetitive tasks to reduce cognitive overhead.</p>\n<h3>2. Practical Implementation</h3>\n<p>Start with a minimal viable product (MVP), run diagnostics frequently to check for vulnerabilities, and optimize performance parameters iteratively based on real visitor metrics.</p>\n<h3>Tech Trends Comparison</h3>\n<table>\n  <thead>\n    <tr>\n      <th>Trend</th>\n      <th>Impact</th>\n      <th>Complexity</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Automation</td>\n      <td>High efficiency, low error rates</td>\n      <td>Moderate setup effort</td>\n    </tr>\n    <tr>\n      <td>AI Integration</td>\n      <td>Personalized experience, analytics</td>\n      <td>High setup effort</td>\n    </tr>\n  </tbody>\n</table>\n<h3>Conclusion</h3>\n<p>Success lies in continuous iterations and maintaining a user-first mindset in all development processes.</p>";
                 $outputExcerpt = !empty($excerpt) ? $excerpt : "An overview of core principles for building scalable modern tech solutions, focusing on simplicity and iteration.";
                 $outputTags = ['Technology', 'Software Design', 'Development'];
                 $outputKeywords = "technology, development, software design, MVP, optimization";
@@ -187,19 +183,7 @@ class AiController extends Controller
         }
 
         $generatedMedia = [];
-
-        // 1. Generate Featured Image (Thumbnail) using keyword-matched stock photo
-        $featuredData = $this->generateImageFromAI($outputTitle) ?? $this->getFallbackImagePayload(null);
-        $fileSize = 0;
-        try {
-            $fileSize = Storage::disk('public')->size($featuredData['path']) ?? 0;
-        } catch (\Exception $e) {}
-        $generatedMedia[] = [
-            'id'       => 'img_' . round(microtime(true) * 1000) . '_0',
-            'fileName' => $featuredData['fileName'],
-            'fileType' => 'image/webp',
-            'fileSize' => $fileSize
-        ];
+        $featuredData = null;
 
         // 2. Process inline images and sliders embedded inside outputContent
         $outputContent = $this->processGeneratedHtml($outputContent, $generatedMedia);
@@ -214,8 +198,8 @@ class AiController extends Controller
             'keywords' => $outputKeywords,
             'seo_description' => $outputSeoDescription,
             'faqs' => $outputFaqs,
-            'featured_image_url' => $featuredData['url'] ?? null,
-            'featured_image_path' => $featuredData['path'] ?? null,
+            'featured_image_url' => null,
+            'featured_image_path' => null,
             'generated_media' => $generatedMedia,
             'offline' => $isOffline,
         ]);
@@ -1018,89 +1002,17 @@ class AiController extends Controller
         libxml_clear_errors();
 
         $xpath = new \DOMXPath($dom);
-        $counter = 1;
 
-        // 1. Process inline images: <img data-ai-prompt="..." />
+        // 1. Remove inline images: <img data-ai-prompt="..." />
         $imgs = $xpath->query('//img[@data-ai-prompt]');
         foreach ($imgs as $img) {
-            $aiPrompt = $img->getAttribute('data-ai-prompt');
-            if ($aiPrompt) {
-                $imgData = $this->generateImageFromAI($aiPrompt) ?? $this->getFallbackImagePayload(null);
-
-                $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
-                $fileSize = 0;
-                if ($imgData['media_id']) {
-                    try {
-                        $fileSize = Storage::disk('public')->size($imgData['path']) ?? 0;
-                    } catch (\Exception $e) {}
-                }
-                $generatedMedia[] = [
-                    'id' => $imgId,
-                    'fileName' => $imgData['fileName'],
-                    'fileType' => 'image/webp',
-                    'fileSize' => $fileSize
-                ];
-
-                $wrapper = $dom->createElement('div');
-                $wrapper->setAttribute('class', 'tiptap-image-wrapper my-4 mx-auto');
-                $wrapper->setAttribute('contenteditable', 'false');
-                $wrapper->setAttribute('draggable', 'true');
-                $wrapper->setAttribute('style', 'position: relative; display: block; width: fit-content; max-width: 100%; margin-top: 1rem; margin-bottom: 1rem; float: none; margin-left: auto; margin-right: auto; clear: both;');
-
-                $newImg = $dom->createElement('img');
-                $newImg->setAttribute('src', $imgData['url']);
-                $newImg->setAttribute('data-image-id', $imgId);
-                $newImg->setAttribute('class', 'rounded-lg max-w-full shadow-sm border border-gray-200 dark:border-slate-800 cursor-pointer block mx-auto');
-                $newImg->setAttribute('style', 'display: block; max-w-100%; width: auto;');
-                
-                $wrapper->appendChild($newImg);
-                $img->parentNode->replaceChild($wrapper, $img);
-            }
+            $img->parentNode->removeChild($img);
         }
 
-        // 2. Process image sliders: <div class="post-slider-placeholder" data-ai-prompt="..." data-count="..."></div>
+        // 2. Remove image sliders: <div class="post-slider-placeholder" ...></div>
         $sliders = $xpath->query('//div[contains(@class, "post-slider-placeholder")] | //div[contains(@class, "post-slider")][@data-ai-prompt]');
         foreach ($sliders as $slider) {
-            $aiPrompt = $slider->getAttribute('data-ai-prompt');
-            $count = intval($slider->getAttribute('data-count') ?: 3);
-            if ($count < 2) $count = 3;
-            if ($count > 5) $count = 5;
-
-            if ($aiPrompt) {
-                $sliderImagesHtml = '';
-                for ($i = 0; $i < $count; $i++) {
-                    $uniquePrompt = $aiPrompt . ' — photo ' . ($i + 1) . ' of ' . $count;
-                    $imgData = $this->generateImageFromAI($uniquePrompt) ?? $this->getFallbackImagePayload(null);
-
-                    $imgId = 'img_' . round(microtime(true) * 1000) . '_' . $counter++;
-                    $fileSize = 0;
-                    if ($imgData['media_id']) {
-                        try {
-                            $fileSize = Storage::disk('public')->size($imgData['path']) ?? 0;
-                        } catch (\Exception $e) {}
-                    }
-                    $generatedMedia[] = [
-                        'id' => $imgId,
-                        'fileName' => $imgData['fileName'],
-                        'fileType' => 'image/webp',
-                        'fileSize' => $fileSize
-                    ];
-
-                    $sliderImagesHtml .= '<p><img src="' . $imgData['url'] . '" data-image-id="' . $imgId . '" style="width:150px; height:100px; object-fit:cover; border-radius:4px;" /></p>';
-                }
-
-                $sliderWrapper = $dom->createElement('div');
-                $sliderWrapper->setAttribute('class', 'post-slider bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex gap-4 overflow-x-auto min-h-[120px] items-center justify-start');
-                
-                $tempDom = new \DOMDocument();
-                $tempDom->loadHTML('<?xml encoding="utf-8" ?><div>' . $sliderImagesHtml . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-                foreach ($tempDom->getElementsByTagName('p') as $p) {
-                    $importedNode = $dom->importNode($p, true);
-                    $sliderWrapper->appendChild($importedNode);
-                }
-
-                $slider->parentNode->replaceChild($sliderWrapper, $slider);
-            }
+            $slider->parentNode->removeChild($slider);
         }
 
         $outputHtml = '';

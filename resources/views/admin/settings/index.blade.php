@@ -116,6 +116,17 @@
                     <input type="file" name="blog_hero_image" id="blog_hero_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     @error('blog_hero_image') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
                 </div>
+
+                <div>
+                    <label for="blog_banner_image" class="block text-sm font-semibold text-gray-700">Blog Page Banner Image</label>
+                    @if($settings->blog_banner_image)
+                        <div class="mt-2">
+                            <img src="{{ asset('storage/' . $settings->blog_banner_image) }}" class="h-10 object-cover rounded border border-gray-200 p-1 bg-gray-50" alt="">
+                        </div>
+                    @endif
+                    <input type="file" name="blog_banner_image" id="blog_banner_image" class="mt-2 block w-full text-xs text-gray-500 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    @error('blog_banner_image') <p class="mt-1 text-xs text-red-650">{{ $message }}</p> @enderror
+                </div>
             </div>
         </div>
 

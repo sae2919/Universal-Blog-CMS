@@ -82,32 +82,19 @@ class SeoPostScenarioTest extends TestCase
         $responseData = $response->json();
         $this->assertTrue($responseData['success']);
         
-        // Assert that the content contains the tiptap-image-wrapper, post-slider and table elements
+        // Assert that the content contains the table but NOT image wrapper and slider elements
         $contentHtml = $responseData['content'];
-        $this->assertStringContainsString('tiptap-image-wrapper', $contentHtml);
-        $this->assertStringContainsString('post-slider', $contentHtml);
+        $this->assertStringNotContainsString('tiptap-image-wrapper', $contentHtml);
+        $this->assertStringNotContainsString('post-slider', $contentHtml);
         $this->assertStringContainsString('<table', $contentHtml);
 
-        // --- Scenario 2: Database Storage of Generated Images ---
-        // Verify that the generated/downloaded images are stored in the media table database.
-        // Even with the offline fallback, it falls back to a valid payload pattern.
+        // --- Scenario 2: No Database Storage of Generated Images ---
+        // Verify that no images are stored since image generation is disabled.
         $generatedMediaList = $responseData['generated_media'];
         $this->assertIsArray($generatedMediaList);
-
-        // Let's check that the generated media is saved in the database
-        // In the controller, the saveImageFromUrl creates a row in the media table:
-        // $media = Media::create([...])
-        if ($responseData['offline'] === false) {
-            // When API and Unsplash download works:
-            $this->assertGreaterThan(0, Media::count());
-            $firstMedia = Media::first();
-            $this->assertNotNull($firstMedia);
-            $this->assertStringContainsString('.webp', $firstMedia->file_name);
-        } else {
-            // Under offline fallback, it provides fallback Unsplash URLs and placeholder paths
-            // We want to ensure that these path configurations are correctly stored.
-            $this->assertNotNull($responseData['featured_image_path']);
-        }
+        $this->assertEmpty($generatedMediaList);
+        $this->assertNull($responseData['featured_image_path']);
+        $this->assertEquals(0, Media::count());
 
         // --- Scenario 3: Store/Publish the Article ---
         // Submit the form with all fields (simulate clicking "Publish Article")
@@ -204,9 +191,6 @@ class SeoPostScenarioTest extends TestCase
         $this->assertStringContainsString('"@type": "BreadcrumbList"', $postHtml);
         $this->assertStringContainsString('"@type": "FAQPage"', $postHtml);
 
-        // 5e. Images alt attributes inside content
-        // Verify that the generated content HTML has correct image rendering with alt or metadata
-        $this->assertStringContainsString('alt=', $postHtml);
 
         // --- Scenario 6: Robots.txt and Sitemap compliance ---
         // 6a. Robots.txt

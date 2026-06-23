@@ -47,6 +47,7 @@ class SettingController extends Controller
             'ai_system_instruction'   => 'nullable|string|max:5000',
             'blog_description'        => 'nullable|string|max:1000',
             'blog_hero_image'         => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'blog_banner_image'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         if ($request->hasFile('site_logo')) {
@@ -63,6 +64,9 @@ class SettingController extends Controller
         }
         if ($request->hasFile('blog_hero_image')) {
             $validated['blog_hero_image'] = $request->file('blog_hero_image')->store('settings', 'public');
+        }
+        if ($request->hasFile('blog_banner_image')) {
+            $validated['blog_banner_image'] = $request->file('blog_banner_image')->store('settings', 'public');
         }
 
         Setting::updateOrCreate(['id' => 1], $validated);

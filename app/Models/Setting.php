@@ -14,7 +14,7 @@ class Setting extends Model
         'google_analytics', 'google_tag_manager',
         'site_niche', 'site_accent_color', 'site_font', 'site_layout', 'default_og_image',
         'global_cta_title', 'global_cta_description', 'global_cta_button_text', 'global_cta_button_link', 'global_cta_bg_image',
-        'ai_system_instruction', 'blog_description', 'blog_hero_image',
+        'ai_system_instruction', 'blog_description', 'blog_hero_image', 'blog_banner_image',
     ];
 
     /**

@@ -6,7 +6,7 @@
 @section('content')
 <!-- Page Header Banner -->
 <div class="relative py-16 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 text-center bg-cover bg-top bg-no-repeat transition-all duration-300 mb-8 md:mb-12"
-     style="background-image: url('{{ asset('images/blogg.png') }}');">
+     style="background-image: url('{{ \App\Models\Setting::getValue('blog_banner_image') ? asset('storage/' . \App\Models\Setting::getValue('blog_banner_image')) : asset('images/blogg.png') }}');">
     {{-- Dark mode background overlay --}}
     <div class="absolute inset-0 bg-slate-950/80 opacity-0 dark:opacity-100 transition-opacity duration-300"></div>
     
